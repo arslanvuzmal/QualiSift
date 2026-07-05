@@ -1,53 +1,48 @@
 ```
-# Executables and binaries
-ai-sales-qualifier
-
 # Dependencies
 node_modules/
 venv/
 .venv/
 __pycache__/
-*.egg-info/
-
-# Build artifacts
+.mypy_cache/
+.pytest_cache/
 dist/
 build/
 target/
+.gradle/
 
-# Environment files
-.env
-.env.local
-*.env.*
+# Compiled files
+*.pyc
+*.class
+*.o
+*.exe
+*.dll
+*.so
+*.a
+*.obj
+*.out
 
-# Editors
+# Editors/IDEs
 .vscode/
 .idea/
 *.swp
 *.swo
 
+# System files
+.DS_Store
+Thumbs.db
+.env
+.env.local
+*.env.*
+
 # Logs and temp files
 *.log
 *.tmp
 
-# OS files
-.DS_Store
-Thumbs.db
-
-# Python specific
-*.pyc
-*.pyo
-*.pyd
-.Python
-*.so
-
-# Coverage reports
+# Coverage
 coverage/
 htmlcov/
 .coverage
-
-# Testing
-.pytest_cache/
-.mypy_cache/
 
 # Compressed files
 *.zip
