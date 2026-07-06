@@ -4,6 +4,7 @@ This module provides validation logic to ensure LLM-generated scores are grounde
 in the actual lead data, using fuzzy string matching to verify cited evidence.
 """
 
+import re
 from difflib import SequenceMatcher
 from typing import Any
 
@@ -57,6 +58,12 @@ def verify_evidence_in_data(evidence: list[str], lead_data: dict, threshold: flo
             return
         if isinstance(obj, str):
             searchable_texts.append(normalize_text(obj))
+        elif isinstance(obj, bool):
+            searchable_texts.append(str(obj).lower())
+        elif isinstance(obj, (int, float)):
+            # Numeric fields (employee_count, funding amount, ...) must be
+            # searchable so numeric evidence can be grounded, not flagged.
+            searchable_texts.append(str(obj))
         elif isinstance(obj, dict):
             for value in obj.values():
                 extract_values(value, depth + 1)
@@ -66,7 +73,11 @@ def verify_evidence_in_data(evidence: list[str], lead_data: dict, threshold: flo
     
     extract_values(lead_data)
     combined_text = " ".join(searchable_texts)
-    
+    # Digit-runs present anywhere in the lead data, used to verify numeric
+    # evidence (e.g. "250 employees", "$30,000,000") that plain string
+    # similarity would otherwise miss.
+    numeric_tokens = set(re.findall(r"\d{2,}", combined_text))
+
     results = []
     for idx, evid in enumerate(evidence):
         normalized_evidence = normalize_text(evid)
@@ -81,7 +92,19 @@ def verify_evidence_in_data(evidence: list[str], lead_data: dict, threshold: flo
                 "reason": "Exact match found",
             })
             continue
-        
+
+        # Numeric evidence: verify by digit-run, ignoring $/comma formatting.
+        evidence_numbers = re.findall(r"\d{2,}", normalized_evidence.replace(",", ""))
+        if evidence_numbers and any(num in numeric_tokens for num in evidence_numbers):
+            results.append({
+                "index": idx,
+                "evidence": evid,
+                "valid": True,
+                "similarity": 0.9,
+                "reason": "Numeric value verified in lead data",
+            })
+            continue
+
         # Fall back to fuzzy matching against individual fields
         max_similarity = 0.0
         best_match_field = None

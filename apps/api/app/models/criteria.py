@@ -9,7 +9,7 @@ from datetime import datetime
 from typing import Optional
 
 from sqlalchemy import Boolean, DateTime, Float, Index, String, Text
-from sqlalchemy.dialects.postgresql import UUID
+from app.db.base import PortableUUID as UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base

@@ -38,7 +38,7 @@ async def health_check(
     # Check database
     try:
         result = await session.execute(text("SELECT 1"))
-        await result.fetchone()
+        result.fetchone()
         health_status["database"] = "ok"
     except Exception as e:
         logger.error("Database health check failed", error=str(e))
@@ -93,7 +93,7 @@ async def readiness_check(
     try:
         # Quick database check
         result = await session.execute(text("SELECT 1"))
-        await result.fetchone()
+        result.fetchone()
         return StandardResponse(
             success=True,
             data={"ready": True},

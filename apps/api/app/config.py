@@ -55,6 +55,15 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: str = ""
     OPENAI_MODEL: str = "gpt-4o"
 
+    # Pluggable provider adapters
+    ENRICHMENT_PROVIDER: str = "mock"
+    CRM_PROVIDER: str = "mock"
+    EMAIL_PROVIDER: str = "console"
+
+    # Notifications
+    SLACK_WEBHOOK_URL: str | None = None
+    WEBHOOK_SECRET: str | None = None
+
     # API Keys (encrypted storage)
     CLEARBIT_API_KEY: str | None = None
     APOLLO_API_KEY: str | None = None

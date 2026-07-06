@@ -45,6 +45,7 @@ class CriteriaScoreRead(BaseModel):
     criteria_name: str
     score: int = Field(ge=1, le=10)
     reasoning: Optional[str] = None
+    cited_evidence: Optional[list[str]] = None
     confidence: float = Field(ge=0.0, le=1.0)
     created_at: datetime
 

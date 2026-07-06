@@ -23,7 +23,14 @@ logger = structlog.get_logger()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan manager for startup/shutdown events."""
-    logger.info("Starting AI Sales Lead Qualifier API")
+    logger.info("Starting AI Sales Lead Qualifier API", env=settings.APP_ENV)
+    # In non-production environments (local dev, tests, CI) there are no
+    # Alembic migrations to run, so ensure the schema exists on startup.
+    if not settings.is_production:
+        from app.db.session import init_db
+
+        await init_db()
+        logger.info("Database schema ensured (development mode)")
     yield
     logger.info("Shutting down AI Sales Lead Qualifier API")
 
@@ -107,21 +114,6 @@ app.include_router(
     prefix="/api/v1",
     tags=["health"],
 )
-
-
-# Apply rate limits to specific routes
-@rate_limiter.limit("100/minute")
-@app.get("/api/v1/leads")
-async def list_leads_rate_limited():
-    """Placeholder to apply rate limit to leads endpoint."""
-    pass
-
-
-@rate_limiter.limit("1000/minute")
-@app.post("/api/v1/webhooks/inbound")
-async def webhook_rate_limited():
-    """Placeholder to apply higher rate limit to webhooks."""
-    pass
 
 
 @app.get("/health")

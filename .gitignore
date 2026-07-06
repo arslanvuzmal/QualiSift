@@ -1,1 +1,8 @@
 Nothing needs to be added to .gitignore since only a README.md file was modified and no build artifacts, dependencies, or temporary files were detected in the changes.
+# local dev artifacts
+apps/api/.venv/
+apps/api/dev.db
+apps/api/.env
+**/__pycache__/
+*.pyc
+**/*.egg-info/

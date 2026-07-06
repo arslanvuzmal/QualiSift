@@ -10,7 +10,7 @@ from enum import Enum as PyEnum
 from typing import Optional
 
 from sqlalchemy import DateTime, Enum, Integer, String, Text
-from sqlalchemy.dialects.postgresql import UUID
+from app.db.base import PortableUUID as UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base

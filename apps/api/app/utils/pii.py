@@ -6,7 +6,6 @@ and recursively redacting PII from data structures.
 """
 
 import hashlib
-import re
 from typing import Any
 
 import structlog
@@ -32,52 +31,44 @@ def hash_email(email: str, salt: str) -> str:
 
 def mask_phone(phone: str) -> str:
     """
-    Mask a phone number by replacing middle digits with 'X'.
+    Mask a phone number while preserving its original formatting.
 
-    Handles various phone formats including international codes.
+    Keeps the last 4 digits and all leading digits visible, and masks the up-to
+    3 digits immediately before the last 4 (the local exchange). Separators and
+    a leading ``+`` are preserved. Numbers with fewer than 4 digits are fully
+    masked.
+
     Examples:
-        +1-555-123-4567 -> +1-555-XXX-4567
-        5551234567 -> 555XXX4567
-        +44 20 7946 0958 -> +44 20 7946 XXXX
+        +1-555-123-4567  -> +1-555-XXX-4567
+        5551234567       -> 555XXX4567
+        +44 20 7946 0958 -> +44 20 7XXX 0958
+        123              -> XXX
 
     Args:
         phone: The phone number to mask.
 
     Returns:
-        str: The masked phone number with middle digits replaced by 'X'.
+        str: The masked phone number with original formatting preserved.
     """
-    # Extract only digits and leading '+' if present
-    has_plus = phone.startswith("+")
-    digits_only = re.sub(r"[^\d]", "", phone)
+    digit_positions = [i for i, ch in enumerate(phone) if ch.isdigit()]
+    n = len(digit_positions)
 
-    if len(digits_only) < 4:
-        # Too short to mask meaningfully, return as-is with X replacement
-        logger.warning("Phone number too short to mask properly", phone_length=len(digits_only))
-        return "X" * len(digits_only) if digits_only else phone
+    if n < 4:
+        # Too short to partially mask meaningfully - mask everything.
+        if n == 0:
+            return phone
+        logger.warning("Phone number too short to mask partially", phone_length=n)
+        return "X" * n
 
-    # Keep first 3 and last 4 digits, mask the rest
-    keep_start = 3
-    keep_end = 4
+    # Mask up to 3 digits immediately before the final 4 (keep last 4 visible).
+    mask_count = min(3, n - 4)
+    mask_digit_indices = set(range(n - 4 - mask_count, n - 4))
 
-    if len(digits_only) <= keep_start + keep_end:
-        # Not enough digits, mask half
-        mask_count = len(digits_only) // 2
-        return (
-            ("+" if has_plus else "")
-            + digits_only[:mask_count]
-            + "X" * (len(digits_only) - mask_count)
-        )
-
-    unmasked_digits = digits_only[:keep_start] + digits_only[-keep_end:]
-    masked_middle = "X" * (len(digits_only) - keep_start - keep_end)
-
-    # Reconstruct with original formatting where possible
-    result = digits_only[:keep_start] + masked_middle + digits_only[-keep_end:]
-
-    if has_plus:
-        result = "+" + result
-
-    return result
+    chars = list(phone)
+    for digit_index, position in enumerate(digit_positions):
+        if digit_index in mask_digit_indices:
+            chars[position] = "X"
+    return "".join(chars)
 
 
 def redact_pii(data: dict[str, Any], salt: str = "default-salt") -> dict[str, Any]:

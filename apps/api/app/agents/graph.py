@@ -16,8 +16,153 @@ from langgraph.graph import END, StateGraph
 from app.agents.prompts import SYSTEM_PROMPT, build_user_prompt
 from app.agents.schemas import LeadScoreResult
 from app.agents.validator import AntiHallucinationValidator
+from app.config import settings
 
 logger = structlog.get_logger(__name__)
+
+
+# --- Scoring providers -----------------------------------------------------
+# The mock provider generates grounded, deterministic scores directly from the
+# lead's real fields (so every cited_evidence item can be verified by the
+# anti-hallucination validator), letting the whole pipeline run with no API
+# key. The OpenAI provider is used when LLM_PROVIDER=openai and a key is set.
+
+
+def _pick_evidence(*candidates: Any) -> list[str]:
+    """Return grounded, non-empty string evidence drawn from real lead data."""
+    evidence: list[str] = []
+    for candidate in candidates:
+        if candidate is None:
+            continue
+        text = str(candidate).strip()
+        if text and text.lower() not in {"n/a", "none", ""}:
+            evidence.append(text)
+    return evidence or ["No supporting data found in lead record"]
+
+
+def _seniority_score(job_title: str | None) -> int:
+    title = (job_title or "").lower()
+    if any(k in title for k in ("chief", "ceo", "cto", "cfo", "coo", "founder", "president", "owner")):
+        return 10
+    if "vp" in title or "vice president" in title or "head of" in title:
+        return 8
+    if "director" in title:
+        return 7
+    if "manager" in title or "lead" in title:
+        return 5
+    return 3 if title else 2
+
+
+def _size_score(employee_count: int | None) -> int:
+    if not employee_count:
+        return 4
+    if employee_count >= 1000:
+        return 9
+    if employee_count >= 250:
+        return 8
+    if employee_count >= 50:
+        return 6
+    return 4
+
+
+def _timing_score(funding: dict | None) -> int:
+    if not funding:
+        return 4
+    year = str(funding.get("date", ""))[:4]
+    return 9 if year in {"2024", "2025", "2026"} else 6
+
+
+def _clamp(value: int) -> int:
+    return max(1, min(10, value))
+
+
+def _mock_score(lead_data: dict[str, Any], criteria_configs: list[dict[str, Any]]) -> dict[str, Any]:
+    """Produce grounded, deterministic criteria scores from real lead fields."""
+    industry = lead_data.get("industry")
+    company = lead_data.get("company") or lead_data.get("company_name")
+    job_title = lead_data.get("job_title")
+    employees = lead_data.get("employee_count")
+    tech_stack = lead_data.get("tech_stack") or []
+    funding = lead_data.get("recent_funding") or {}
+    source = lead_data.get("source")
+
+    heuristics: dict[str, tuple[int, list[str], str]] = {
+        "icp_fit": (
+            _size_score(employees),
+            _pick_evidence(industry, company, f"{employees} employees" if employees else None),
+            "Company size and industry indicate strong ICP alignment.",
+        ),
+        "buying_intent": (
+            _clamp(6 if source else 4),
+            _pick_evidence(source, *(tech_stack[:1] if tech_stack else [])),
+            "Inbound source and technographic signals suggest active evaluation.",
+        ),
+        "authority": (
+            _seniority_score(job_title),
+            _pick_evidence(job_title),
+            "The contact's title reflects their level of decision-making authority.",
+        ),
+        "pain_need": (
+            _clamp(7 if tech_stack else 5),
+            _pick_evidence(*(tech_stack[:2] if tech_stack else []), industry),
+            "The current tech stack and industry point to a solvable pain point.",
+        ),
+        "timing": (
+            _timing_score(funding),
+            _pick_evidence(funding.get("round"), funding.get("date")),
+            "Recent funding activity is a compelling event that improves timing.",
+        ),
+    }
+
+    criteria_scores = []
+    for cfg in criteria_configs:
+        name = cfg["name"]
+        score, evidence, reason = heuristics.get(
+            name,
+            (6, _pick_evidence(company, industry), "General fit based on available firmographic data."),
+        )
+        grounded = "No supporting" not in evidence[0]
+        criteria_scores.append(
+            {
+                "criteria_name": name,
+                "score": score,
+                "reasoning": reason,
+                "cited_evidence": evidence,
+                "confidence": 0.75 if grounded else 0.4,
+            }
+        )
+
+    label = company or "This lead"
+    return {
+        "lead_email_hash": lead_data.get("email_hash", "unknown"),
+        "criteria_scores": criteria_scores,
+        "overall_summary": (
+            f"{label} shows a mixed but actionable profile across the five criteria, "
+            f"with clear signals on fit, authority, and timing."
+        ),
+        "suggested_action": "Schedule a discovery call to confirm fit and current priorities.",
+        "disqualify": False,
+        "disqualify_reason": None,
+    }
+
+
+def _score_with_openai(system_prompt: str, user_prompt: str) -> dict[str, Any]:
+    """Score a lead using OpenAI structured outputs (requires OPENAI_API_KEY)."""
+    from langchain_openai import ChatOpenAI
+
+    llm = ChatOpenAI(
+        model=settings.OPENAI_MODEL,
+        temperature=0.1,
+        api_key=settings.OPENAI_API_KEY,
+    )
+    structured = llm.with_structured_output(LeadScoreResult)
+    result = structured.invoke(
+        [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ]
+    )
+    return result.model_dump()
 
 
 class AgentState(TypedDict):
@@ -136,37 +281,18 @@ def score_lead(state: AgentState) -> AgentState:
             prompt_length=len(system_prompt) + len(user_prompt),
         )
 
-        # TODO: Replace with actual LangChain/OpenAI call
-        # Example:
-        # from langchain_openai import ChatOpenAI
-        # from langchain_core.output_parsers import PydanticOutputParser
-        # 
-        # llm = ChatOpenAI(model="gpt-4o", temperature=0.1)
-        # parser = PydanticOutputParser(pydantic_object=LeadScoreResult)
-        # chain = llm | parser
-        # result = chain.invoke({"system": system_prompt, "user": user_prompt})
-        
-        # Mock response for testing (will be replaced by real LLM call)
-        mock_response = {
-            "lead_email_hash": lead_data.get("email_hash", "unknown"),
-            "criteria_scores": [
-                {
-                    "criteria_name": cfg["name"],
-                    "score": 7,
-                    "reasoning": "Mock reasoning for testing purposes. This would contain actual analysis.",
-                    "cited_evidence": ["Mock evidence from lead data"],
-                    "confidence": 0.8,
-                }
-                for cfg in criteria_configs
-            ],
-            "overall_summary": "Mock summary: This lead shows moderate potential across most criteria.",
-            "suggested_action": "Schedule a discovery call to discuss their current challenges.",
-            "disqualify": False,
-            "disqualify_reason": None,
-        }
+        # Dispatch to the configured scoring provider.
+        if settings.LLM_PROVIDER == "openai" and settings.OPENAI_API_KEY:
+            response = _score_with_openai(system_prompt, user_prompt)
+            provider = "openai"
+        else:
+            response = _mock_score(lead_data, criteria_configs)
+            provider = "mock"
 
-        # Validate against Pydantic schema
-        parsed_result = LeadScoreResult.model_validate(mock_response)
+        logger.info("Scoring provider used", provider=provider)
+
+        # Validate against the strict Pydantic schema.
+        parsed_result = LeadScoreResult.model_validate(response)
 
         logger.info(
             "LLM scoring completed",

@@ -10,7 +10,7 @@ from enum import Enum as PyEnum
 from typing import TYPE_CHECKING, Optional
 
 from sqlalchemy import Column, DateTime, Enum, ForeignKey, Index, String, Text
-from sqlalchemy.dialects.postgresql import JSONB, UUID
+from app.db.base import JSONType as JSONB, PortableUUID as UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -89,7 +89,6 @@ class Lead(Base):
     # Table indexes
     __table_args__ = (
         Index("ix_leads_company_domain_status", "company_domain", "status"),
-        Index("ix_leads_email_hash", "email_hash"),
     )
 
     def __repr__(self) -> str:

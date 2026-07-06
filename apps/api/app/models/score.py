@@ -9,7 +9,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Optional
 
 from sqlalchemy import DateTime, Enum, ForeignKey, Index, String, Text, Boolean, Float, Integer
-from sqlalchemy.dialects.postgresql import JSONB, UUID
+from app.db.base import JSONType as JSONB, PortableUUID as UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base

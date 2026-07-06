@@ -9,6 +9,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Query, BackgroundTasks, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
+from sqlalchemy.orm import selectinload
 
 from app.db.session import get_db_session
 from app.models.lead import Lead, LeadStatus
@@ -83,11 +84,14 @@ async def create_lead(
 
 
 async def _trigger_scoring(lead_id: str) -> None:
-    """Background task to trigger AI scoring for a lead."""
+    """Background task: enrich + score a newly created lead and persist results."""
     logger.info("Triggering scoring for lead", lead_id=lead_id)
-    # TODO: Integrate with LangGraph scoring agent
-    # For now, just update status to enriched
-    # In production, this would call the LangGraph workflow
+    from app.services.scoring import score_lead_by_id
+
+    try:
+        await score_lead_by_id(lead_id)
+    except Exception as exc:  # noqa: BLE001 - background task must not crash silently
+        logger.exception("Background scoring failed", lead_id=lead_id, error=str(exc))
 
 
 @router.get("", response_model=StandardResponse)
@@ -114,33 +118,18 @@ async def list_leads(
     total_result = await session.execute(count_query)
     total = total_result.scalar() or 0
 
-    # Apply pagination
+    # Apply pagination (eager-load scores + composite so the list can show them)
     offset = (page - 1) * page_size
-    query = query.offset(offset).limit(page_size)
+    query = (
+        query.offset(offset)
+        .limit(page_size)
+        .options(selectinload(Lead.scores), selectinload(Lead.composite_score))
+    )
 
     result = await session.execute(query)
     leads = result.scalars().all()
 
-    # Convert to read schema
-    items = [
-        LeadRead(
-            id=lead.id,
-            email=lead.email,
-            email_hash=lead.email_hash,
-            first_name=lead.first_name,
-            last_name=lead.last_name,
-            company=lead.company,
-            company_domain=lead.company_domain,
-            job_title=lead.job_title,
-            source=lead.source,
-            raw_payload=lead.raw_payload,
-            enriched_data=lead.enriched_data,
-            status=lead.status,
-            created_at=lead.created_at,
-            updated_at=lead.updated_at,
-        )
-        for lead in leads
-    ]
+    items = [LeadRead.model_validate(lead) for lead in leads]
 
     return StandardResponse(
         success=True,
@@ -157,28 +146,14 @@ async def get_lead(
     """
     Get a specific lead by ID with nested scores.
     """
-    result = await session.execute(select(Lead).where(Lead.id == lead_id))
+    result = await session.execute(
+        select(Lead)
+        .where(Lead.id == lead_id)
+        .options(selectinload(Lead.scores), selectinload(Lead.composite_score))
+    )
     lead = result.scalars().first()
 
     if not lead:
         raise HTTPException(status_code=404, detail="Lead not found")
 
-    return StandardResponse(
-        success=True,
-        data=LeadRead(
-            id=lead.id,
-            email=lead.email,
-            email_hash=lead.email_hash,
-            first_name=lead.first_name,
-            last_name=lead.last_name,
-            company=lead.company,
-            company_domain=lead.company_domain,
-            job_title=lead.job_title,
-            source=lead.source,
-            raw_payload=lead.raw_payload,
-            enriched_data=lead.enriched_data,
-            status=lead.status,
-            created_at=lead.created_at,
-            updated_at=lead.updated_at,
-        ),
-    )
+    return StandardResponse(success=True, data=LeadRead.model_validate(lead))

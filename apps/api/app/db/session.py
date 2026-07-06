@@ -1,37 +1,35 @@
 """
 Database session and engine configuration.
 
-This module provides async SQLAlchemy engine and session factory
-for database operations.
+Provides an async SQLAlchemy engine, a session factory for FastAPI dependency
+injection, and a helper to create tables for local development / tests.
+
+The engine is dialect-aware: PostgreSQL gets a connection pool, while SQLite
+(used for Postgres-less local dev and CI) omits the unsupported pool options.
 """
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
-from sqlalchemy.orm import Session
 
 from app.config import settings
 
 
-def get_async_engine() -> any:
-    """
-    Create and return an async SQLAlchemy engine.
-
-    Returns:
-        AsyncEngine: SQLAlchemy async engine instance.
-    """
-    return create_async_engine(
-        settings.DATABASE_URL,
-        echo=settings.DEBUG,
-        pool_pre_ping=True,
-        pool_size=10,
-        max_overflow=20,
-    )
+def _engine_kwargs() -> dict:
+    """Build engine kwargs appropriate for the configured database dialect."""
+    kwargs: dict = {"echo": settings.DEBUG, "pool_pre_ping": True}
+    # SQLite does not support the QueuePool sizing options below.
+    if not settings.DATABASE_URL.startswith("sqlite"):
+        kwargs.update(pool_size=10, max_overflow=20)
+    return kwargs
 
 
-# Global engine instance
+def get_async_engine():
+    """Create and return an async SQLAlchemy engine for the configured DB."""
+    return create_async_engine(settings.DATABASE_URL, **_engine_kwargs())
+
+
+# Global engine + session factory
 async_engine = get_async_engine()
 
-
-# Session factory for dependency injection
 async_session_factory = async_sessionmaker(
     bind=async_engine,
     class_=AsyncSession,
@@ -41,13 +39,8 @@ async_session_factory = async_sessionmaker(
 )
 
 
-async def get_db_session() -> AsyncSession:
-    """
-    Dependency generator for database sessions.
-
-    Yields:
-        AsyncSession: Database session for request handling.
-    """
+async def get_db_session():
+    """FastAPI dependency that yields a transactional async DB session."""
     async with async_session_factory() as session:
         try:
             yield session
@@ -59,20 +52,14 @@ async def get_db_session() -> AsyncSession:
             await session.close()
 
 
-def get_sync_session() -> Session:
-    """
-    Get a synchronous session for scripts and migrations.
+async def init_db() -> None:
+    """Create any missing tables.
 
-    Returns:
-        Session: Synchronous database session.
+    Used for local development and tests, where Alembic migrations are not
+    run. Production creates its schema via ``alembic upgrade head``.
     """
-    # Create sync engine from async URL
-    sync_url = str(settings.DATABASE_URL).replace(
-        "postgresql+asyncpg", "postgresql"
-    )
-    sync_engine = create_async_engine(
-        sync_url.replace("+asyncpg", ""),
-        echo=settings.DEBUG,
-        pool_pre_ping=True,
-    )
-    return Session(bind=sync_engine)
+    from app.db.base import Base
+    import app.models  # noqa: F401 - ensure every model is registered on Base
+
+    async with async_engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)

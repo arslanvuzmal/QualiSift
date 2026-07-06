@@ -63,6 +63,9 @@ async def _run_scoring_workflow(lead_id: str) -> None:
     6. Update lead status and save scores to DB
     """
     logger.info("Running scoring workflow", lead_id=lead_id)
-    # TODO: Integrate with LangGraph scoring agent
-    # from app.agents.graph import score_lead_async
-    # result = await score_lead_async(lead_id)
+    from app.services.scoring import score_lead_by_id
+
+    try:
+        await score_lead_by_id(lead_id)
+    except Exception as exc:  # noqa: BLE001 - background task must not crash silently
+        logger.exception("Scoring workflow failed", lead_id=lead_id, error=str(exc))

@@ -5,8 +5,9 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_
+from sqlalchemy.orm import selectinload
 
-from app.models.lead import Lead
+from app.models.lead import Lead, LeadStatus
 from app.models.score import CompositeScore
 from app.schemas.digest import DigestPayload, HotLeadDigestItem, WarmLeadDigestItem
 
@@ -32,17 +33,20 @@ class DigestService:
         if run_date is None:
             run_date = datetime.now(timezone.utc)
         
-        # Calculate the time window (last 24 hours)
-        cutoff_time = run_date - timedelta(hours=24)
-        
+        # Calculate the time window (last 24 hours). Use a naive UTC timestamp
+        # to match the naive DateTime columns.
+        cutoff_time = (run_date - timedelta(hours=24)).replace(tzinfo=None)
+
         logger.info("Compiling daily digest", run_date=run_date.isoformat(), cutoff=cutoff_time.isoformat())
-        
-        # Query for scored leads in the last 24 hours
-        query = select(Lead).join(CompositeScore).where(
-            and_(
-                Lead.status == 'scored',
-                Lead.created_at >= cutoff_time
-            )
+
+        # Query scored leads in the window. Compare against the LeadStatus enum
+        # (SQLAlchemy persists the member name, "SCORED"), and eager-load the
+        # per-criterion scores so hot-lead cards render without a lazy load.
+        query = (
+            select(Lead)
+            .join(CompositeScore)
+            .where(and_(Lead.status == LeadStatus.SCORED, Lead.created_at >= cutoff_time))
+            .options(selectinload(Lead.scores), selectinload(Lead.composite_score))
         )
         
         result = await self.db.execute(query)
