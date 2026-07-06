@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { RefreshCw, Mail } from 'lucide-react';
 import { useLeads } from '@/lib/hooks';
 import { ScoreBadge } from '@/components/ScoreBadge';
@@ -125,12 +126,12 @@ export default function Dashboard() {
               leads.map((lead) => (
                 <tr key={lead.id} className="hover:bg-slate-50">
                   <td className="px-4 py-4">
-                    <div>
-                      <p className="font-medium text-slate-900">
+                    <Link href={`/leads/${lead.id}`} className="block group">
+                      <p className="font-medium text-slate-900 group-hover:text-indigo-600">
                         {lead.first_name} {lead.last_name}
                       </p>
                       <p className="text-sm text-slate-500">{lead.email}</p>
-                    </div>
+                    </Link>
                   </td>
                   <td className="px-4 py-4">
                     <div>

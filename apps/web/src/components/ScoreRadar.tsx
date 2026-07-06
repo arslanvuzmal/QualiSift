@@ -8,10 +8,8 @@ import {
   PolarRadiusAxis,
   ResponsiveContainer,
 } from 'recharts';
-import type { CriteriaScore } from '@/lib/types';
-
 interface ScoreRadarProps {
-  scores: CriteriaScore[];
+  scores: { criteria_name: string; score: number; confidence?: number }[];
   height?: number;
 }
 

@@ -76,9 +76,9 @@ export const apiClient = {
 };
 
 // API Functions
-export async function fetchLeads(page = 1, perPage = 20) {
-  return apiClient.get<StandardResponse<{ leads: unknown[]; meta: unknown }>>(
-    `/api/v1/leads?page=${page}&per_page=${perPage}`
+export async function fetchLeads(page = 1, pageSize = 20) {
+  return apiClient.get<{ items: unknown[]; total: number; page: number; page_size: number }>(
+    `/api/v1/leads?page=${page}&page_size=${pageSize}`
   );
 }
 

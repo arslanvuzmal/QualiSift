@@ -44,6 +44,17 @@ export interface Lead {
   created_at: string;
   updated_at: string;
   composite_score?: CompositeScore | null;
+  scores?: CriteriaScoreRead[] | null;
+}
+
+export interface CriteriaScoreRead {
+  id: string;
+  criteria_name: string;
+  score: number;
+  reasoning?: string | null;
+  cited_evidence?: string[] | null;
+  confidence: number;
+  created_at: string;
 }
 
 export interface LeadListResponse {

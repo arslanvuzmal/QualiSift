@@ -6,3 +6,8 @@ apps/api/.env
 **/__pycache__/
 *.pyc
 **/*.egg-info/
+
+# web build/deps
+apps/web/node_modules/
+apps/web/.next/
+apps/web/next-env.d.ts
