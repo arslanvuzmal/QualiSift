@@ -8,13 +8,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements first for better caching
-COPY pyproject.toml .
+# Copy project metadata + package source needed to build/install the package.
+COPY pyproject.toml ./
+COPY app ./app
 
-# Install Python dependencies
+# Install Python dependencies (and the app package itself).
 RUN pip install --no-cache-dir ".[dev]"
 
-# Copy application code
+# Copy the rest of the application code (alembic, scripts, templates, ...).
 COPY . .
 
 # Expose port

@@ -1,3 +1,7 @@
+# Full local stack: PostgreSQL (pgvector) + Redis + FastAPI API + Next.js web.
+# All services share one bridge network; the API binds to 0.0.0.0 and uses the
+# `postgres` service name as its DB host, while the browser reaches the API at
+# http://localhost:8000. Run:  docker compose up --build
 services:
   postgres:
     image: pgvector/pgvector:pg16
@@ -10,11 +14,14 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
+      interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
+    networks:
+      - app-network
 
   redis:
     image: redis:7-alpine
@@ -23,9 +30,67 @@ services:
       - "6379:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
+      interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
+    networks:
+      - app-network
+
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    container_name: ai-sales-qualifier-api
+    environment:
+      - APP_ENV=development
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/ai_sales_qualifier
+      - REDIS_URL=redis://redis:6379/0
+      - LLM_PROVIDER=mock
+      - ENRICHMENT_PROVIDER=mock
+      - CRM_PROVIDER=mock
+      - EMAIL_PROVIDER=console
+      - PII_SALT=change-me-in-production
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./apps/api:/app
+    # Create schema (Alembic), seed idempotently, then serve on 0.0.0.0.
+    command: >
+      sh -c "alembic upgrade head &&
+             python -m scripts.seed &&
+             uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+    networks:
+      - app-network
+
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+    container_name: ai-sales-qualifier-web
+    environment:
+      # Read by the browser, so it must be the host-visible URL, not the
+      # internal docker service name.
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+    volumes:
+      - ./apps/web:/app
+      - /app/node_modules
+      - /app/.next
+    command: npm run dev
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
 
 volumes:
   postgres_data:
