@@ -6,9 +6,25 @@ const config: Config = {
     './src/components/**/*.{js,ts,jsx,tsx,mdx}',
     './src/app/**/*.{js,ts,jsx,tsx,mdx}',
   ],
+  darkMode: ['selector', '[data-theme="dark"]'],
   theme: {
     extend: {
       colors: {
+        admin: {
+          bg: '#f5f7fb',
+          surface: '#ffffff',
+          soft: '#f8fafc',
+          border: '#dbe4ef',
+          text: '#1f2937',
+          muted: '#6b7280',
+          primary: '#2563eb',
+          primaryDark: '#1d4ed8',
+          success: '#0f766e',
+          warning: '#d97706',
+          danger: '#dc2626',
+          sidebar: '#111827',
+          sidebarSoft: '#1f2937',
+        },
         slate: {
           50: '#f8fafc',
           100: '#f1f5f9',
