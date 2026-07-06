@@ -180,3 +180,4 @@ Built with:
 - [PostgreSQL + pgvector](https://github.com/pgvector/pgvector) - Vector similarity search
 - [SQLAlchemy 2.0](https://docs.sqlalchemy.org/) - Async ORM
 - [Recharts](https://recharts.org/) - Composable charting library
+# Cortex
