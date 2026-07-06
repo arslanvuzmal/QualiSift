@@ -22,11 +22,12 @@ target/
 *.obj
 *.out
 
-# Editors/IDEs
+# Editor/IDE files
 .vscode/
 .idea/
 *.swp
 *.swo
+*.tmp
 
 # System files
 .DS_Store
@@ -35,9 +36,8 @@ Thumbs.db
 .env.local
 *.env.*
 
-# Logs and temp files
+# Logs
 *.log
-*.tmp
 
 # Coverage
 coverage/
