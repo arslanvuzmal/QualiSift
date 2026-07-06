@@ -1,4 +1,4 @@
-# 🎯 AI Sales Lead Qualifier (Cortex)
+# 🎯 (Cortex) AI LEADS QUALIFIER
 
 **Intelligent lead scoring powered by LLMs, anti-hallucination validation, and automated daily digests.**
 
