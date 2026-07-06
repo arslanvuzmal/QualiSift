@@ -15,12 +15,10 @@ from app.db.session import get_db_session
 from app.models.lead import Lead, LeadStatus
 from app.schemas.lead import (
     LeadCreate,
-    LeadUpdate,
     LeadRead,
     LeadListResponse,
 )
 from app.schemas.common import StandardResponse
-from app.services.digest import DigestService
 
 logger = structlog.get_logger()
 

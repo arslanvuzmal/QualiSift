@@ -30,7 +30,7 @@ async def list_criteria(
     """
     query = select(CriteriaConfig)
     if active_only:
-        query = query.where(CriteriaConfig.is_active == True)
+        query = query.where(CriteriaConfig.is_active.is_(True))
 
     result = await session.execute(query)
     criteria = result.scalars().all()

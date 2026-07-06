@@ -9,7 +9,7 @@ from datetime import datetime
 from enum import Enum as PyEnum
 from typing import Optional
 
-from sqlalchemy import DateTime, Enum, Integer, String, Text
+from sqlalchemy import DateTime, Enum, Integer, Text
 from app.db.base import PortableUUID as UUID
 from sqlalchemy.orm import Mapped, mapped_column
 

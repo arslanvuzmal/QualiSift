@@ -6,7 +6,6 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from jinja2 import Environment, FileSystemLoader
 from pathlib import Path
-from typing import Optional
 
 from app.adapters.email.base import EmailAdapter
 from app.schemas.digest import DigestPayload

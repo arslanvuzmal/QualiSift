@@ -8,7 +8,7 @@ import uuid
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import Boolean, DateTime, Float, Index, String, Text
+from sqlalchemy import Boolean, DateTime, Float, String, Text
 from app.db.base import PortableUUID as UUID
 from sqlalchemy.orm import Mapped, mapped_column
 

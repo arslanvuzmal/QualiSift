@@ -5,9 +5,9 @@ Checks database, Redis, and overall system health.
 """
 
 import structlog
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Response
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, text
+from sqlalchemy import text
 
 from app.db.session import get_db_session
 from app.schemas.common import StandardResponse
@@ -19,6 +19,7 @@ router = APIRouter(prefix="/health", tags=["health"])
 
 @router.get("", response_model=StandardResponse)
 async def health_check(
+    response: Response,
     session: AsyncSession = Depends(get_db_session),
 ) -> StandardResponse:
     """
@@ -63,13 +64,13 @@ async def health_check(
 
     if any_critical:
         overall_status = "unhealthy"
-        status_code = 503
     elif not all_healthy:
         overall_status = "degraded"
-        status_code = 200
     else:
         overall_status = "healthy"
-        status_code = 200
+
+    # Signal a hard failure (e.g. DB down) with 503 so load balancers react.
+    response.status_code = 503 if any_critical else 200
 
     return StandardResponse(
         success=all_healthy,

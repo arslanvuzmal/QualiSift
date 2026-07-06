@@ -4,7 +4,6 @@ import structlog
 import httpx
 from jinja2 import Environment, FileSystemLoader
 from pathlib import Path
-from typing import Optional
 
 from app.adapters.email.base import EmailAdapter
 from app.schemas.digest import DigestPayload

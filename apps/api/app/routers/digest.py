@@ -12,7 +12,6 @@ from sqlalchemy import select
 
 from app.db.session import get_db_session
 from app.models.digest import DigestRun, DigestStatus
-from app.schemas.digest import DigestPayload
 from app.schemas.common import StandardResponse
 from app.services.digest import DigestService
 

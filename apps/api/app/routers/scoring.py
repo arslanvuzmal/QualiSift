@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from app.db.session import get_db_session
-from app.models.lead import Lead, LeadStatus
+from app.models.lead import Lead
 from app.schemas.common import StandardResponse
 
 logger = structlog.get_logger()

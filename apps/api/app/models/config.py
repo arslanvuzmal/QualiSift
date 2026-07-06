@@ -4,12 +4,9 @@ SQLAlchemy ORM model for AppConfig entity.
 Stores application configuration key-value pairs with optional encryption.
 """
 
-import uuid
 from datetime import datetime
-from typing import Optional
 
 from sqlalchemy import Boolean, DateTime, String, Text
-from app.db.base import PortableUUID as UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base

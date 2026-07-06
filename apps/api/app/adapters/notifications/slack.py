@@ -2,7 +2,6 @@
 
 import structlog
 import httpx
-from typing import Optional
 
 from app.schemas.digest import DigestPayload
 

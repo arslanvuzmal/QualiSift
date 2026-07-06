@@ -5,8 +5,6 @@ Handles inbound webhooks from external tools like HubSpot, Marketo, etc.
 """
 
 import structlog
-import hashlib
-import hmac
 from fastapi import APIRouter, Request, HTTPException, Header, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select

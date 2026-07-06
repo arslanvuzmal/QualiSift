@@ -8,7 +8,7 @@ This module implements the LangGraph StateGraph with nodes for:
 - calculate_composite: Compute weighted composite score
 """
 
-from typing import Annotated, Any, TypedDict
+from typing import Any, TypedDict
 
 import structlog
 from langgraph.graph import END, StateGraph

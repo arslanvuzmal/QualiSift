@@ -9,7 +9,6 @@ from app.adapters.email.console import ConsoleEmailAdapter
 from app.adapters.email.smtp import SMTPEmailAdapter
 from app.adapters.email.sendgrid import SendGridEmailAdapter
 from app.adapters.notifications.slack import SlackAdapter
-from app.schemas.digest import DigestPayload
 from app.services.digest import DigestService
 
 logger = structlog.get_logger()
