@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from sqlalchemy.orm import selectinload
 
+from app.config import settings
 from app.db.session import get_db_session
 from app.models.lead import Lead, LeadStatus
 from app.schemas.lead import (
@@ -19,6 +20,7 @@ from app.schemas.lead import (
     LeadListResponse,
 )
 from app.schemas.common import StandardResponse
+from app.utils.pii import hash_email
 
 logger = structlog.get_logger()
 
@@ -49,11 +51,9 @@ async def create_lead(
         )
 
     # Create new lead
-    from app.utils.pii import hash_email
-
     new_lead = Lead(
         email=lead_data.email,
-        email_hash=hash_email(lead_data.email, "default-salt"),
+        email_hash=hash_email(lead_data.email, settings.PII_SALT),
         first_name=lead_data.first_name,
         last_name=lead_data.last_name,
         company=lead_data.company,

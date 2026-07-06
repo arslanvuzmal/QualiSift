@@ -5,10 +5,11 @@ Handles inbound webhooks from external tools like HubSpot, Marketo, etc.
 """
 
 import structlog
-from fastapi import APIRouter, Request, HTTPException, Header, Depends
+from fastapi import APIRouter, Request, HTTPException, Header, Depends, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
+from app.config import settings
 from app.db.session import get_db_session
 from app.models.lead import Lead, LeadStatus
 from app.schemas.common import StandardResponse
@@ -22,6 +23,7 @@ router = APIRouter(prefix="/webhooks", tags=["webhooks"])
 @router.post("/inbound", response_model=StandardResponse, status_code=202)
 async def handle_inbound_webhook(
     request: Request,
+    background_tasks: BackgroundTasks,
     x_hubspot_signature: str | None = Header(None, alias="X-Hubspot-Signature"),
     x_marketo_guid: str | None = Header(None, alias="X-Marketo-Guid"),
     session: AsyncSession = Depends(get_db_session),
@@ -83,7 +85,7 @@ async def handle_inbound_webhook(
     # Create new lead
     new_lead = Lead(
         email=lead_data["email"],
-        email_hash=hash_email(lead_data["email"], "default-salt"),
+        email_hash=hash_email(lead_data["email"], settings.PII_SALT),
         first_name=lead_data.get("first_name"),
         last_name=lead_data.get("last_name"),
         company=lead_data.get("company"),
@@ -105,12 +107,25 @@ async def handle_inbound_webhook(
         source=new_lead.source,
     )
 
+    # Enrich + score the new lead in the background, like the create-lead API.
+    background_tasks.add_task(_score_webhook_lead, str(new_lead.id))
+
     return StandardResponse(
         success=True,
         message="Lead accepted from webhook and queued for processing",
         data={"lead_id": str(new_lead.id)},
         meta={"status": "queued"},
     )
+
+
+async def _score_webhook_lead(lead_id: str) -> None:
+    """Background task: enrich + score a lead ingested via webhook."""
+    from app.services.scoring import score_lead_by_id
+
+    try:
+        await score_lead_by_id(lead_id)
+    except Exception as exc:  # noqa: BLE001 - background task must not crash silently
+        logger.exception("Webhook lead scoring failed", lead_id=lead_id, error=str(exc))
 
 
 def _parse_webhook_payload(payload: dict) -> dict:
