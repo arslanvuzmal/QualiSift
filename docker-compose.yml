@@ -38,7 +38,7 @@ services:
 
   api:
     build:
-      context: ./apps/api
+      context: ./ai-sales-qualifier/apps/api
       dockerfile: Dockerfile
     container_name: ai-sales-qualifier-api
     environment:
@@ -58,7 +58,7 @@ services:
       redis:
         condition: service_healthy
     volumes:
-      - ./apps/api:/app
+      - ./ai-sales-qualifier/apps/api:/app
     # Create schema (Alembic), seed idempotently, then serve on 0.0.0.0.
     command: >
       sh -c "alembic upgrade head &&
@@ -69,7 +69,7 @@ services:
 
   web:
     build:
-      context: ./apps/web
+      context: ./ai-sales-qualifier/apps/web
       dockerfile: Dockerfile
     container_name: ai-sales-qualifier-web
     environment:
@@ -81,7 +81,7 @@ services:
     depends_on:
       - api
     volumes:
-      - ./apps/web:/app
+      - ./ai-sales-qualifier/apps/web:/app
       - /app/node_modules
       - /app/.next
     command: npm run dev
