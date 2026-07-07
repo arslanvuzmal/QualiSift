@@ -11,9 +11,8 @@ for seed data. Configure the target database via environment variables or an
 import sys
 from pathlib import Path
 
-# Make the API package importable when run from the repo root.
-API_DIR = Path(__file__).resolve().parent.parent / "apps" / "api"
-sys.path.insert(0, str(API_DIR))
+# Add the api directory to the path so we can import app modules
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "ai-sales-qualifier" / "apps" / "api"))
 
 from app.db.seed import main  # noqa: E402  (path setup must precede import)
 
