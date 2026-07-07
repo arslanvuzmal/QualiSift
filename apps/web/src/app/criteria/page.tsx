@@ -29,12 +29,14 @@ export default function CriteriaPage() {
   };
 
   return (
-    <div className="max-w-2xl">
-      <h1 className="text-2xl font-bold text-slate-900">Scoring Criteria</h1>
-      <p className="text-slate-600 mt-1 mb-6">
-        Tune how much each criterion contributes to a lead&apos;s composite score.
-        Weights must sum to <span className="font-medium">1.0</span>.
-      </p>
+    <div className="max-w-2xl space-y-6">
+      <div className="flex flex-col gap-1">
+        <h1 className="text-3xl font-black tracking-tighter text-white">Scoring Criteria</h1>
+        <p className="admin-muted text-sm font-medium">
+          Tune how much each criterion contributes to a lead&apos;s composite score.
+          Weights must sum to <span className="text-white font-black">1.0</span>.
+        </p>
+      </div>
 
       {isLoading ? (
         <p className="text-slate-500">Loading criteria…</p>

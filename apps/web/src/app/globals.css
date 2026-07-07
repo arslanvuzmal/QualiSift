@@ -2,31 +2,38 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ---- adminHMD-inspired design tokens ---- */
+/* ---- 3D Dark Theme (Grey & Black) Design Tokens ---- */
 :root {
-  --admin-bg: #f5f7fb;
-  --admin-surface: #ffffff;
-  --admin-soft: #f8fafc;
-  --admin-border: #dbe4ef;
-  --admin-text: #1f2937;
-  --admin-muted: #6b7280;
-  --admin-primary: #2563eb;
-  --admin-success: #0f766e;
-  --admin-warning: #d97706;
-  --admin-danger: #dc2626;
-  --admin-sidebar: #111827;
-  --admin-sidebar-soft: #1f2937;
-  --admin-shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 1px 3px rgba(16, 24, 40, 0.06);
-  --admin-shadow-lg: 0 10px 25px -5px rgba(16, 24, 40, 0.12);
+  --admin-bg: #050505;
+  --admin-surface: #121212;
+  --admin-soft: #1a1a1a;
+  --admin-border: #2a2a2a;
+  --admin-text: #f0f0f0;
+  --admin-muted: #888888;
+  --admin-primary: #ffffff;
+  --admin-success: #10b981;
+  --admin-warning: #f59e0b;
+  --admin-danger: #ef4444;
+  --admin-sidebar: #0a0a0a;
+  --admin-sidebar-soft: #161616;
+  /* 3D Depth Shadows */
+  --admin-shadow:
+    0 1px 2px rgba(0,0,0,0.5),
+    inset 0 1px 1px rgba(255,255,255,0.05);
+  --admin-shadow-lg:
+    0 20px 40px -10px rgba(0,0,0,0.8),
+    inset 0 1px 2px rgba(255,255,255,0.1);
+  --admin-3d-glow: 0 0 15px rgba(255,255,255,0.05);
 }
 
-:root[data-theme="dark"] {
-  --admin-bg: #0b1220;
-  --admin-surface: #111827;
-  --admin-soft: #0f1729;
-  --admin-border: #24304a;
-  --admin-text: #e5e7eb;
-  --admin-muted: #9aa4b2;
+/* Force dark theme regardless of attribute for now to ensure consistency */
+:root[data-theme="light"], :root[data-theme="dark"] {
+  --admin-bg: #050505;
+  --admin-surface: #121212;
+  --admin-soft: #1a1a1a;
+  --admin-border: #2a2a2a;
+  --admin-text: #f0f0f0;
+  --admin-muted: #888888;
 }
 
 body {
@@ -36,60 +43,70 @@ body {
 
 @layer components {
   .panel {
-    background: var(--admin-surface);
+    background: linear-gradient(145deg, #161616, #0e0e0e);
     border: 1px solid var(--admin-border);
-    border-radius: 8px;
+    border-radius: 12px;
     box-shadow: var(--admin-shadow);
-    padding: 1.35rem;
-    transition: border-color 0.18s ease, box-shadow 0.18s ease;
+    padding: 1.5rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+  }
+  .panel::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 12px;
+    background: linear-gradient(135deg, rgba(255,255,255,0.03) 0%, transparent 100%);
+    pointer-events: none;
   }
   .panel:hover {
     box-shadow: var(--admin-shadow-lg);
+    transform: translateY(-2px);
+    border-color: rgba(255,255,255,0.15);
   }
 
   .metric-card {
     position: relative;
     overflow: hidden;
-    background: var(--admin-surface);
+    background: linear-gradient(145deg, #1c1c1c, #141414);
     border: 1px solid var(--admin-border);
-    border-radius: 8px;
+    border-radius: 12px;
     box-shadow: var(--admin-shadow);
-    padding: 1.35rem;
+    padding: 1.5rem;
     min-height: 150px;
-    transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
   .metric-card::before {
     content: "";
     position: absolute;
     inset: 0 auto 0 0;
-    width: 4px;
+    width: 3px;
     background: var(--metric-color, var(--admin-primary));
+    box-shadow: 0 0 10px var(--metric-color);
   }
   .metric-card:hover {
-    transform: translateY(-3px);
+    transform: translateY(-5px) scale(1.02);
     box-shadow: var(--admin-shadow-lg);
+    border-color: rgba(255,255,255,0.1);
   }
   .metric-icon {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 42px;
-    height: 42px;
-    border-radius: 8px;
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
     color: var(--metric-color, var(--admin-primary));
-    background: #eaf2ff;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.05);
+    box-shadow: inset 0 1px 1px rgba(255,255,255,0.05);
   }
 
-  .m-primary { --metric-color: var(--admin-primary); }
-  .m-success { --metric-color: var(--admin-success); }
-  .m-warning { --metric-color: var(--admin-warning); }
-  .m-danger  { --metric-color: var(--admin-danger); }
+  .m-primary { --metric-color: #ffffff; }
+  .m-success { --metric-color: #10b981; }
+  .m-warning { --metric-color: #f59e0b; }
+  .m-danger  { --metric-color: #ef4444; }
   .m-neutral { --metric-color: #64748b; }
-  .m-success .metric-icon { background: #e7f6f3; }
-  .m-warning .metric-icon { background: #fff4df; }
-  .m-danger  .metric-icon { background: #ffecec; }
-  .m-neutral .metric-icon { background: #eef2f7; }
-  :root[data-theme="dark"] .metric-icon { background: rgba(37, 99, 235, 0.14); }
 
   .admin-muted { color: var(--admin-muted); }
 
@@ -104,11 +121,11 @@ body {
     font-weight: 700;
     line-height: 1.4;
   }
-  .badge-hot   { background: #ffecec; color: #dc2626; }
-  .badge-warm  { background: #fff4df; color: #b45309; }
-  .badge-cold  { background: #eef2f7; color: #475569; }
-  .badge-neutral { background: #eaf2ff; color: #2563eb; }
-  .badge-ok    { background: #e7f6f3; color: #0f766e; }
+  .badge-hot   { background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); }
+  .badge-warm  { background: rgba(245, 158, 11, 0.1); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.2); }
+  .badge-cold  { background: rgba(100, 116, 139, 0.1); color: #94a3b8; border: 1px solid rgba(100, 116, 139, 0.2); }
+  .badge-neutral { background: rgba(255, 255, 255, 0.05); color: #f0f0f0; border: 1px solid rgba(255, 255, 255, 0.1); }
+  .badge-ok    { background: rgba(16, 185, 129, 0.1); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.2); }
 
   /* sidebar nav link */
   .side-link {
@@ -125,7 +142,8 @@ body {
   .side-link:hover { background: var(--admin-sidebar-soft); color: #ffffff; }
   .side-link.active {
     color: #ffffff;
-    background: linear-gradient(135deg, #2563eb, #0f766e);
-    box-shadow: 0 6px 14px -6px rgba(37, 99, 235, 0.6);
+    background: linear-gradient(135deg, #333333, #111111);
+    border: 1px solid rgba(255,255,255,0.1);
+    box-shadow: var(--admin-shadow-lg);
   }
 }

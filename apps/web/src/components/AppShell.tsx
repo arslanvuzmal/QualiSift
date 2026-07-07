@@ -69,15 +69,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           open ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        <div className="flex items-center gap-3 px-5 py-5">
-          <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-[#2563eb] to-[#0f766e] text-white shadow-lg">
+        <Link href="/" className="flex items-center gap-3 px-5 py-5 transition-opacity hover:opacity-80">
+          <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-[#333333] to-[#000000] text-white shadow-[0_0_15px_rgba(255,255,255,0.1)] border border-white/10">
             <Target className="h-5 w-5" />
           </span>
           <span className="leading-tight">
-            <span className="block text-sm font-bold">Cortex</span>
-            <span className="block text-[11px] text-slate-400">Lead Qualifier</span>
+            <span className="block text-sm font-bold tracking-tight">Cortex</span>
+            <span className="block text-[11px] text-slate-500 font-bold uppercase tracking-tighter">Lead Qualifier</span>
           </span>
-        </div>
+        </Link>
 
         <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-2">
           {NAV.map(({ href, label, icon: Icon }) => (
@@ -88,19 +88,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           ))}
         </nav>
 
-        <div className="mx-3 mb-2 flex items-center gap-3 rounded-lg bg-admin-sidebarSoft px-3 py-3">
-          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-[#2563eb] to-[#0f766e] text-xs font-bold text-white">
+        <div className="mx-3 mb-2 flex items-center gap-3 rounded-xl bg-admin-sidebarSoft px-3 py-3 border border-white/5 shadow-inner">
+          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-[#444] to-[#111] text-xs font-black text-white border border-white/10">
             SC
           </span>
           <span className="leading-tight">
-            <span className="block text-sm font-semibold text-white">Sales Cortex</span>
-            <span className="block text-[11px] text-slate-400">Active workspace</span>
+            <span className="block text-sm font-bold text-white">Sales Cortex</span>
+            <span className="block text-[11px] text-slate-500 font-bold">Active workspace</span>
           </span>
         </div>
 
-        <div className="flex items-center gap-2 px-5 py-3 text-[11px] text-slate-400">
-          <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_0_3px_rgba(52,211,153,0.25)]" />
-          Pipeline running smoothly
+        <div className="flex items-center gap-2 px-5 py-3 text-[10px] font-black uppercase tracking-widest text-slate-500">
+          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+          System Operational
         </div>
       </aside>
 
@@ -142,11 +142,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-admin-danger" />
               <Bell className="h-[18px] w-[18px]" />
             </button>
-            <button className="ml-1 flex items-center gap-2 rounded-lg py-1 pl-1 pr-2 hover:bg-admin-soft">
-              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-[#2563eb] to-[#0f766e] text-xs font-bold text-white">
+            <button className="ml-1 flex items-center gap-2 rounded-xl py-1 pl-1 pr-2 hover:bg-white/5 border border-transparent hover:border-white/10 transition-all">
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-[#444] to-[#111] text-xs font-black text-white border border-white/10">
                 SC
               </span>
-              <span className="hidden text-sm font-medium sm:inline" style={{ color: 'var(--admin-text)' }}>
+              <span className="hidden text-sm font-bold sm:inline" style={{ color: 'var(--admin-text)' }}>
                 Sales Cortex
               </span>
               <ChevronDown className="hidden h-4 w-4 text-admin-muted sm:inline" />

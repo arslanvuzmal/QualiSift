@@ -24,24 +24,25 @@ export function ScoreRadar({ scores, height = 300 }: ScoreRadarProps) {
   return (
     <div className="w-full" style={{ height }}>
       <ResponsiveContainer width="100%" height="100%">
-        <RadarChart cx="50%" cy="50%" outerRadius="80%" data={data}>
-          <PolarGrid stroke="#e2e8f0" />
+        <RadarChart cx="50%" cy="50%" outerRadius="75%" data={data}>
+          <PolarGrid stroke="rgba(255,255,255,0.1)" />
           <PolarAngleAxis
             dataKey="subject"
-            tick={{ fill: '#475569', fontSize: 12 }}
+            tick={{ fill: '#888', fontSize: 9, fontWeight: 900 }}
           />
           <PolarRadiusAxis
             angle={90}
             domain={[0, 10]}
-            tick={{ fill: '#64748b', fontSize: 10 }}
+            tick={{ fill: '#555', fontSize: 8 }}
+            axisLine={false}
           />
           <Radar
             name="Score"
             dataKey="A"
-            stroke="#4f46e5"
+            stroke="#ffffff"
             strokeWidth={2}
-            fill="#4f46e5"
-            fillOpacity={0.3}
+            fill="#ffffff"
+            fillOpacity={0.15}
           />
         </RadarChart>
       </ResponsiveContainer>
