@@ -1,0 +1,34 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-slate-950 text-slate-100 font-sans antialiased;
+  }
+}
+
+@layer components {
+  /* Common Card Styling */
+  .enterprise-card {
+    @apply bg-slate-900 border border-slate-800 rounded-xl shadow-sm transition-all duration-200 ease-out;
+  }
+  
+  .enterprise-card:hover {
+    @apply border-slate-700 shadow-md;
+  }
+
+  /* Interactive Elements */
+  .btn-primary {
+    @apply inline-flex items-center justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-[0_0_15px_rgba(79,70,229,0.3)] transition-all duration-200 ease-out hover:bg-indigo-500 hover:shadow-[0_0_20px_rgba(79,70,229,0.5)] active:scale-95 disabled:opacity-50 disabled:pointer-events-none;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center rounded-lg border border-slate-800 bg-slate-900 px-4 py-2 text-sm font-medium text-slate-300 shadow-sm transition-all duration-200 ease-out hover:bg-slate-800 hover:border-slate-700 active:scale-95 disabled:opacity-50 disabled:pointer-events-none;
+  }
+
+  /* Table styles */
+  .table-row-hover {
+    @apply transition-all duration-200 ease-out hover:bg-slate-800/50 cursor-pointer;
+  }
+}
