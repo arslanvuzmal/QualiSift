@@ -2,7 +2,7 @@
 
 import pytest
 from datetime import datetime, timedelta, timezone
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.schemas.digest import DigestPayload, HotLeadDigestItem, WarmLeadDigestItem
@@ -237,7 +237,7 @@ class TestSlackPayload:
     def test_slack_payload_structure(self):
         """Test that generated Slack payload matches Block Kit schema."""
         from app.adapters.notifications.slack import SlackAdapter
-        from app.schemas.digest import DigestPayload, HotLeadDigestItem
+        from app.schemas.digest import DigestPayload
         
         payload = DigestPayload(
             run_date=datetime.now(timezone.utc),

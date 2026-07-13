@@ -11,6 +11,6 @@ RUN npm install
 # Copy the rest of the app (overridden by the bind mount in docker-compose dev).
 COPY . .
 
-EXPOSE 3000
+EXPOSE 3001
 
 CMD ["npm", "run", "dev"]

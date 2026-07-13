@@ -77,7 +77,7 @@ services:
       # internal docker service name.
       - NEXT_PUBLIC_API_URL=http://localhost:8000
     ports:
-      - "3000:3000"
+      - "3001:3001"
     depends_on:
       - api
     volumes:

@@ -21,6 +21,8 @@ export function LeadCard({ lead, onClick }: LeadCardProps) {
       className={cn(
         'panel transition-all cursor-pointer border border-white/5',
         isExpanded && 'ring-2 ring-white/20'
+        'border border-slate-800 rounded-lg bg-slate-900 shadow-sm hover:shadow-md transition-shadow cursor-pointer',
+        isExpanded && 'ring-2 ring-indigo-500'
       )}
       onClick={onClick}
     >
@@ -29,6 +31,8 @@ export function LeadCard({ lead, onClick }: LeadCardProps) {
           <div className="flex-1">
             <h3 className="font-black text-white text-lg tracking-tight">{lead.company}</h3>
             <p className="text-sm font-bold text-slate-400">
+            <h3 className="font-semibold text-slate-100">{lead.company}</h3>
+            <p className="text-sm text-slate-400">
               {lead.first_name} {lead.last_name} • {lead.job_title}
             </p>
             <p className="text-[10px] font-black uppercase tracking-widest text-slate-600 mt-2">{lead.email}</p>
@@ -46,6 +50,12 @@ export function LeadCard({ lead, onClick }: LeadCardProps) {
                 <ChevronUp className="h-4 w-4 text-white" />
               ) : (
                 <ChevronDown className="h-4 w-4 text-white" />
+              className="p-1 hover:bg-slate-800 rounded"
+            >
+              {isExpanded ? (
+                <ChevronUp className="h-4 w-4 text-slate-400" />
+              ) : (
+                <ChevronDown className="h-4 w-4 text-slate-400" />
               )}
             </button>
           </div>
@@ -67,6 +77,21 @@ export function LeadCard({ lead, onClick }: LeadCardProps) {
                   Action
                 </h4>
                 <p className="text-sm font-black leading-relaxed">
+          <div className="mt-4 pt-4 border-t border-slate-800">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <h4 className="text-sm font-medium text-slate-300 mb-2">
+                  Summary
+                </h4>
+                <p className="text-sm text-slate-400">
+                  {lead.composite_score?.overall_summary || 'No summary available'}
+                </p>
+              </div>
+              <div>
+                <h4 className="text-sm font-medium text-slate-300 mb-2">
+                  Suggested Action
+                </h4>
+                <p className="text-sm text-slate-400">
                   {lead.composite_score?.suggested_action || 'No action suggested'}
                 </p>
               </div>
@@ -76,6 +101,9 @@ export function LeadCard({ lead, onClick }: LeadCardProps) {
               <div className="mt-4 p-4 bg-red-500/10 border border-red-500/20 rounded-xl">
                 <p className="text-xs font-black uppercase tracking-widest text-red-500">
                   <strong>Disqualified:</strong> {lead.composite_score.disqualify_reason || 'Low composite score'}
+              <div className="mt-3 p-3 bg-rose-500/10 border border-rose-500/20 rounded">
+                <p className="text-sm text-rose-400">
+                  <strong className="text-rose-300">Disqualified:</strong> {lead.composite_score.disqualify_reason || 'Low composite score'}
                 </p>
               </div>
             )}

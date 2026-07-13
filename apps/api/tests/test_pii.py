@@ -2,7 +2,6 @@
 Unit tests for PII redaction utilities.
 """
 
-import pytest
 
 from app.utils.pii import hash_email, mask_phone, redact_pii
 

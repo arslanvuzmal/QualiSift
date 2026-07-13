@@ -107,19 +107,29 @@ body {
   .m-warning { --metric-color: #f59e0b; }
   .m-danger  { --metric-color: #ef4444; }
   .m-neutral { --metric-color: #64748b; }
+@layer base {
+  body {
+    @apply bg-slate-950 text-slate-100 font-sans antialiased;
+  }
+}
 
-  .admin-muted { color: var(--admin-muted); }
+@layer components {
+  /* Common Card Styling */
+  .enterprise-card {
+    @apply bg-slate-900 border border-slate-800 rounded-xl shadow-sm transition-all duration-200 ease-out;
+  }
+  
+  .enterprise-card:hover {
+    @apply border-slate-700 shadow-md;
+  }
 
-  /* status pills */
-  .badge-admin {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.3rem;
-    padding: 0.15rem 0.6rem;
-    border-radius: 999px;
-    font-size: 0.72rem;
-    font-weight: 700;
-    line-height: 1.4;
+  /* Interactive Elements */
+  .btn-primary {
+    @apply inline-flex items-center justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-[0_0_15px_rgba(79,70,229,0.3)] transition-all duration-200 ease-out hover:bg-indigo-500 hover:shadow-[0_0_20px_rgba(79,70,229,0.5)] active:scale-95 disabled:opacity-50 disabled:pointer-events-none;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center rounded-lg border border-slate-800 bg-slate-900 px-4 py-2 text-sm font-medium text-slate-300 shadow-sm transition-all duration-200 ease-out hover:bg-slate-800 hover:border-slate-700 active:scale-95 disabled:opacity-50 disabled:pointer-events-none;
   }
   .badge-hot   { background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); }
   .badge-warm  { background: rgba(245, 158, 11, 0.1); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.2); }
@@ -145,5 +155,9 @@ body {
     background: linear-gradient(135deg, #333333, #111111);
     border: 1px solid rgba(255,255,255,0.1);
     box-shadow: var(--admin-shadow-lg);
+
+  /* Table styles */
+  .table-row-hover {
+    @apply transition-all duration-200 ease-out hover:bg-slate-800/50 cursor-pointer;
   }
 }

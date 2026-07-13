@@ -1,7 +1,5 @@
 """Unit tests for the LangGraph scoring agent."""
 
-import pytest
-from unittest.mock import AsyncMock, patch
 
 from app.agents.graph import (
     AgentState,

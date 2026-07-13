@@ -5,7 +5,7 @@ Represents a sales lead with contact information, company data, and status track
 """
 
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum as PyEnum
 from typing import TYPE_CHECKING, Optional
 
@@ -63,13 +63,13 @@ class Lead(Base):
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=False),
-        default=datetime.utcnow,
+        default=lambda: datetime.now(timezone.utc).replace(tzinfo=None),
         nullable=False,
     )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=False),
-        default=datetime.utcnow,
-        onupdate=datetime.utcnow,
+        default=lambda: datetime.now(timezone.utc).replace(tzinfo=None),
+        onupdate=lambda: datetime.now(timezone.utc).replace(tzinfo=None),
         nullable=False,
     )
 

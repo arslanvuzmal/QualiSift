@@ -1,39 +1,48 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronRight, Check } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Check, Sparkles, Building, Key, Database } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useRouter } from 'next/navigation';
 
-type Step = 'llm' | 'enrichment' | 'crm' | 'email' | 'company';
+type Step = 'llm' | 'enrichment' | 'crm' | 'company';
 
-const steps: { key: Step; title: string; description: string }[] = [
-  { key: 'llm', title: 'LLM Provider', description: 'Configure your AI provider' },
-  { key: 'enrichment', title: 'Enrichment', description: 'Choose data enrichment source' },
-  { key: 'crm', title: 'CRM Integration', description: 'Connect your CRM system' },
-  { key: 'email', title: 'Email Provider', description: 'Set up email delivery' },
-  { key: 'company', title: 'Company Info', description: 'Your organization details' },
+const steps: { key: Step; title: string; description: string; icon: React.ComponentType<{ className?: string }> }[] = [
+  { key: 'llm', title: 'AI Provider', description: 'Configure language model', icon: Sparkles },
+  { key: 'enrichment', title: 'Data Enrichment', description: 'Connect data sources', icon: Database },
+  { key: 'crm', title: 'Integrations', description: 'Connect your CRM', icon: Key },
+  { key: 'company', title: 'Organization', description: 'Your company details', icon: Building },
 ];
 
 export default function SetupWizard() {
-  const [currentStep, setCurrentStep] = useState<Step>('llm');
-  const [formData, setFormData] = useState<Record<string, string>>({});
+  const router = useRouter();
+  const [currentStepIndex, setCurrentStepIndex] = useState(0);
+  const [formData, setFormData] = useState<Record<string, string>>({
+    llmProvider: 'openai',
+    enrichmentProvider: 'mock',
+    crmProvider: 'none',
+  });
   const [isCompleted, setIsCompleted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const currentStepIndex = steps.findIndex((s) => s.key === currentStep);
+  const currentStep = steps[currentStepIndex];
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (currentStepIndex < steps.length - 1) {
-      setCurrentStep(steps[currentStepIndex + 1].key);
+      setCurrentStepIndex(prev => prev + 1);
     } else {
-      setIsCompleted(true);
-      // In production, save to API
-      console.log('Setup complete:', formData);
+      setIsSubmitting(true);
+      // Simulate API call
+      setTimeout(() => {
+        setIsSubmitting(false);
+        setIsCompleted(true);
+      }, 1500);
     }
   };
 
   const handleBack = () => {
     if (currentStepIndex > 0) {
-      setCurrentStep(steps[currentStepIndex - 1].key);
+      setCurrentStepIndex(prev => prev - 1);
     }
   };
 
@@ -43,276 +52,257 @@ export default function SetupWizard() {
 
   if (isCompleted) {
     return (
-      <div className="max-w-2xl mx-auto">
-        <div className="bg-white border rounded-lg p-8 text-center">
-          <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Check className="h-8 w-8 text-emerald-600" />
+      <div className="max-w-2xl mx-auto py-20 animate-in fade-in zoom-in duration-500">
+        <div className="enterprise-card bg-slate-900 border-slate-800 p-12 text-center relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-emerald-400 to-emerald-600" />
+          <div className="mx-auto w-20 h-20 bg-emerald-500/10 rounded-full flex items-center justify-center mb-6 border border-emerald-500/20">
+            <div className="w-16 h-16 bg-emerald-500/20 rounded-full flex items-center justify-center">
+              <Check className="h-8 w-8 text-emerald-400" />
+            </div>
           </div>
-          <h1 className="text-2xl font-bold text-slate-900 mb-2">
-            Setup Complete!
+          <h1 className="text-3xl font-bold text-slate-100 mb-3 tracking-tight">
+            You're all set!
           </h1>
-          <p className="text-slate-600 mb-6">
-            Your AI Sales Lead Qualifier is now configured and ready to use.
+          <p className="text-slate-400 mb-8 max-w-sm mx-auto text-lg">
+            CORTEX is fully configured and ready to start qualifying your pipeline.
           </p>
-          <a
-            href="/"
-            className="inline-flex items-center px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+          <button
+            onClick={() => router.push('/')}
+            className="btn-primary py-3 px-8 text-base shadow-[0_0_20px_rgba(79,70,229,0.3)]"
           >
-            Go to Dashboard
-          </a>
+            Go to Dashboard <ChevronRight className="h-5 w-5 ml-2" />
+          </button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-3xl mx-auto">
-      <h1 className="text-2xl font-bold text-slate-900 mb-2">First-Time Setup</h1>
-      <p className="text-slate-600 mb-8">
-        Configure your AI Sales Lead Qualifier to get started.
-      </p>
-
-      {/* Progress Steps */}
+    <div className="max-w-3xl mx-auto pb-24">
       <div className="mb-8">
-        <div className="flex items-center justify-between">
-          {steps.map((step, index) => {
-            const isActive = step.key === currentStep;
-            const isCompleted = steps.findIndex((s) => s.key === currentStep) > index;
+        <h1 className="text-2xl font-bold tracking-tight text-slate-100">Workspace Setup</h1>
+        <p className="text-sm text-slate-400 mt-1">
+          Configure your AI engine and integrations.
+        </p>
+      </div>
 
+      {/* Modern Progress Bar */}
+      <div className="mb-10 relative">
+        <div className="overflow-hidden h-2 mb-4 text-xs flex rounded-full bg-slate-800">
+          <div 
+            style={{ width: `${((currentStepIndex + 1) / steps.length) * 100}%` }} 
+            className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.5)] transition-all duration-500" 
+          />
+        </div>
+        <div className="flex justify-between">
+          {steps.map((step, idx) => {
+            const isPast = idx < currentStepIndex;
+            const isCurrent = idx === currentStepIndex;
             return (
-              <div key={step.key} className="flex items-center">
-                <div
-                  className={cn(
-                    'w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold',
-                    isActive
-                      ? 'bg-indigo-600 text-white'
-                      : isCompleted
-                      ? 'bg-emerald-500 text-white'
-                      : 'bg-slate-200 text-slate-500'
-                  )}
-                >
-                  {isCompleted ? <Check className="h-4 w-4" /> : index + 1}
+              <div key={step.key} className="flex flex-col items-center w-1/4">
+                <div className={cn(
+                  "flex items-center justify-center w-10 h-10 rounded-full mb-2 transition-colors duration-300",
+                  isPast ? "bg-indigo-500/20 text-indigo-400 border border-indigo-500/30" :
+                  isCurrent ? "bg-indigo-600 text-white shadow-[0_0_15px_rgba(79,70,229,0.4)]" :
+                  "bg-slate-800 text-slate-500 border border-slate-700"
+                )}>
+                  {isPast ? <Check className="h-5 w-5" /> : <step.icon className="h-4 w-4" />}
                 </div>
-                {index < steps.length - 1 && (
-                  <div
-                    className={cn(
-                      'w-16 h-0.5',
-                      isCompleted ? 'bg-emerald-500' : 'bg-slate-200'
-                    )}
-                  />
-                )}
+                <span className={cn(
+                  "text-xs font-semibold uppercase tracking-wider text-center mt-1",
+                  isCurrent ? "text-indigo-400" : isPast ? "text-slate-300" : "text-slate-500"
+                )}>
+                  {step.title}
+                </span>
               </div>
             );
           })}
         </div>
-        <div className="flex justify-between mt-2">
-          {steps.map((step) => (
-            <div key={step.key} className="text-xs text-slate-500 w-24 text-center">
-              {step.title}
-            </div>
-          ))}
-        </div>
       </div>
 
-      {/* Step Content */}
-      <div className="bg-white border rounded-lg p-6">
-        {currentStep === 'llm' && (
-          <div className="space-y-4">
-            <h2 className="text-lg font-semibold text-slate-900">
-              LLM API Configuration
-            </h2>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Provider
-              </label>
-              <select
-                value={formData.llmProvider || 'openai'}
-                onChange={(e) => updateField('llmProvider', e.target.value)}
-                className="w-full border rounded-lg px-3 py-2"
-              >
-                <option value="openai">OpenAI</option>
-                <option value="anthropic">Anthropic</option>
-                <option value="google">Google AI</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                API Key
-              </label>
-              <input
-                type="password"
-                value={formData.llmApiKey || ''}
-                onChange={(e) => updateField('llmApiKey', e.target.value)}
-                placeholder="sk-..."
-                className="w-full border rounded-lg px-3 py-2"
-              />
-            </div>
-          </div>
-        )}
-
-        {currentStep === 'enrichment' && (
-          <div className="space-y-4">
-            <h2 className="text-lg font-semibold text-slate-900">
-              Enrichment Provider
-            </h2>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Provider
-              </label>
-              <select
-                value={formData.enrichmentProvider || 'mock'}
-                onChange={(e) => updateField('enrichmentProvider', e.target.value)}
-                className="w-full border rounded-lg px-3 py-2"
-              >
-                <option value="mock">Mock (Development)</option>
-                <option value="clearbit">Clearbit</option>
-                <option value="apollo">Apollo</option>
-              </select>
-            </div>
-            {formData.enrichmentProvider !== 'mock' && (
+      {/* Form Content Wrapper with transition container */}
+      <div className="enterprise-card relative overflow-hidden bg-slate-900 border-slate-800 min-h-[400px] flex flex-col">
+        <div className="p-8 flex-1">
+          
+          {currentStep.key === 'llm' && (
+            <div className="space-y-6 animate-in slide-in-from-right-4 fade-in duration-300">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
-                  API Key
-                </label>
-                <input
-                  type="password"
-                  value={formData.enrichmentApiKey || ''}
-                  onChange={(e) =>
-                    updateField('enrichmentApiKey', e.target.value)
-                  }
-                  placeholder="Enter API key"
-                  className="w-full border rounded-lg px-3 py-2"
-                />
+                <h2 className="text-xl font-bold text-slate-100">AI Provider Configuration</h2>
+                <p className="text-sm text-slate-400 mt-1">Select the language model that will power your lead scoring.</p>
               </div>
-            )}
-          </div>
-        )}
-
-        {currentStep === 'crm' && (
-          <div className="space-y-4">
-            <h2 className="text-lg font-semibold text-slate-900">
-              CRM Integration
-            </h2>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                CRM Provider
-              </label>
-              <select
-                value={formData.crmProvider || 'none'}
-                onChange={(e) => updateField('crmProvider', e.target.value)}
-                className="w-full border rounded-lg px-3 py-2"
-              >
-                <option value="none">None</option>
-                <option value="hubspot">HubSpot</option>
-                <option value="salesforce">Salesforce</option>
-                <option value="pipedrive">Pipedrive</option>
-              </select>
-            </div>
-          </div>
-        )}
-
-        {currentStep === 'email' && (
-          <div className="space-y-4">
-            <h2 className="text-lg font-semibold text-slate-900">
-              Email Provider
-            </h2>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Provider
-              </label>
-              <select
-                value={formData.emailProvider || 'console'}
-                onChange={(e) => updateField('emailProvider', e.target.value)}
-                className="w-full border rounded-lg px-3 py-2"
-              >
-                <option value="console">Console (Development)</option>
-                <option value="smtp">SMTP</option>
-                <option value="sendgrid">SendGrid</option>
-              </select>
-            </div>
-            {formData.emailProvider === 'smtp' && (
-              <>
+              
+              <div className="space-y-5">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
-                    SMTP Host
+                  <label className="block text-sm font-semibold text-slate-300 mb-1.5">
+                    Provider
+                  </label>
+                  <select
+                    value={formData.llmProvider}
+                    onChange={(e) => updateField('llmProvider', e.target.value)}
+                    className="w-full border-slate-700 rounded-lg bg-slate-800 px-4 py-2.5 text-sm text-slate-100 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow outline-none"
+                  >
+                    <option value="openai">OpenAI (Recommended)</option>
+                    <option value="anthropic">Anthropic Claude</option>
+                    <option value="google">Google Gemini</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-300 mb-1.5">
+                    API Key
+                  </label>
+                  <input
+                    type="password"
+                    value={formData.llmApiKey || ''}
+                    onChange={(e) => updateField('llmApiKey', e.target.value)}
+                    placeholder="sk-..."
+                    className="w-full border border-slate-700 rounded-lg bg-slate-800 px-4 py-2.5 text-sm text-slate-100 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow outline-none placeholder:text-slate-500"
+                  />
+                  <p className="text-xs text-slate-500 mt-2">Your key is encrypted and stored securely.</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {currentStep.key === 'enrichment' && (
+            <div className="space-y-6 animate-in slide-in-from-right-4 fade-in duration-300">
+              <div>
+                <h2 className="text-xl font-bold text-slate-100">Data Enrichment</h2>
+                <p className="text-sm text-slate-400 mt-1">Automatically pull firmographics and contact details.</p>
+              </div>
+              
+              <div className="space-y-5">
+                <div>
+                  <label className="block text-sm font-semibold text-slate-300 mb-1.5">
+                    Data Source
+                  </label>
+                  <select
+                    value={formData.enrichmentProvider}
+                    onChange={(e) => updateField('enrichmentProvider', e.target.value)}
+                    className="w-full border-slate-700 rounded-lg bg-slate-800 px-4 py-2.5 text-sm text-slate-100 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow outline-none"
+                  >
+                    <option value="mock">Mock Data (Development)</option>
+                    <option value="clearbit">Clearbit</option>
+                    <option value="apollo">Apollo.io</option>
+                  </select>
+                </div>
+                {formData.enrichmentProvider !== 'mock' && (
+                  <div className="animate-in fade-in slide-in-from-top-2">
+                    <label className="block text-sm font-semibold text-slate-300 mb-1.5">
+                      Enrichment API Key
+                    </label>
+                    <input
+                      type="password"
+                      value={formData.enrichmentApiKey || ''}
+                      onChange={(e) => updateField('enrichmentApiKey', e.target.value)}
+                      placeholder="Enter API key"
+                      className="w-full border border-slate-700 rounded-lg bg-slate-800 px-4 py-2.5 text-sm text-slate-100 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow outline-none placeholder:text-slate-500"
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {currentStep.key === 'crm' && (
+            <div className="space-y-6 animate-in slide-in-from-right-4 fade-in duration-300">
+              <div>
+                <h2 className="text-xl font-bold text-slate-100">CRM Integration</h2>
+                <p className="text-sm text-slate-400 mt-1">Sync scored leads directly to your CRM.</p>
+              </div>
+              
+              <div className="space-y-5">
+                <div>
+                  <label className="block text-sm font-semibold text-slate-300 mb-1.5">
+                    CRM Platform
+                  </label>
+                  <select
+                    value={formData.crmProvider}
+                    onChange={(e) => updateField('crmProvider', e.target.value)}
+                    className="w-full border-slate-700 rounded-lg bg-slate-800 px-4 py-2.5 text-sm text-slate-100 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow outline-none"
+                  >
+                    <option value="none">Skip for now</option>
+                    <option value="hubspot">HubSpot</option>
+                    <option value="salesforce">Salesforce</option>
+                  </select>
+                </div>
+                
+                {formData.crmProvider !== 'none' && (
+                  <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-4 animate-in fade-in slide-in-from-top-2">
+                    <p className="text-sm text-amber-400 font-medium">
+                      You will be redirected to authenticate with {formData.crmProvider === 'hubspot' ? 'HubSpot' : 'Salesforce'} after completing setup.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {currentStep.key === 'company' && (
+            <div className="space-y-6 animate-in slide-in-from-right-4 fade-in duration-300">
+              <div>
+                <h2 className="text-xl font-bold text-slate-100">Company Information</h2>
+                <p className="text-sm text-slate-400 mt-1">Personalize the dashboard for your team.</p>
+              </div>
+              
+              <div className="space-y-5">
+                <div>
+                  <label className="block text-sm font-semibold text-slate-300 mb-1.5">
+                    Workspace Name
                   </label>
                   <input
                     type="text"
-                    value={formData.smtpHost || ''}
-                    onChange={(e) => updateField('smtpHost', e.target.value)}
-                    placeholder="smtp.example.com"
-                    className="w-full border rounded-lg px-3 py-2"
+                    value={formData.companyName || ''}
+                    onChange={(e) => updateField('companyName', e.target.value)}
+                    placeholder="Acme Corp"
+                    className="w-full border border-slate-700 rounded-lg bg-slate-800 px-4 py-2.5 text-sm text-slate-100 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow outline-none placeholder:text-slate-500"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
-                    SMTP Port
+                  <label className="block text-sm font-semibold text-slate-300 mb-1.5">
+                    Industry / Vertical
                   </label>
                   <input
-                    type="number"
-                    value={formData.smtpPort || ''}
-                    onChange={(e) => updateField('smtpPort', e.target.value)}
-                    placeholder="587"
-                    className="w-full border rounded-lg px-3 py-2"
+                    type="text"
+                    value={formData.industry || ''}
+                    onChange={(e) => updateField('industry', e.target.value)}
+                    placeholder="B2B SaaS"
+                    className="w-full border border-slate-700 rounded-lg bg-slate-800 px-4 py-2.5 text-sm text-slate-100 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow outline-none placeholder:text-slate-500"
                   />
                 </div>
-              </>
-            )}
-          </div>
-        )}
-
-        {currentStep === 'company' && (
-          <div className="space-y-4">
-            <h2 className="text-lg font-semibold text-slate-900">
-              Company Information
-            </h2>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Company Name
-              </label>
-              <input
-                type="text"
-                value={formData.companyName || ''}
-                onChange={(e) => updateField('companyName', e.target.value)}
-                placeholder="Acme Inc."
-                className="w-full border rounded-lg px-3 py-2"
-              />
+              </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Industry
-              </label>
-              <input
-                type="text"
-                value={formData.industry || ''}
-                onChange={(e) => updateField('industry', e.target.value)}
-                placeholder="Technology"
-                className="w-full border rounded-lg px-3 py-2"
-              />
-            </div>
-          </div>
-        )}
+          )}
+        </div>
 
-        {/* Navigation Buttons */}
-        <div className="flex justify-between mt-6 pt-6 border-t">
+        {/* Footer Navigation */}
+        <div className="bg-slate-900/50 p-4 border-t border-slate-800 flex items-center justify-between rounded-b-xl">
           <button
             onClick={handleBack}
-            disabled={currentStepIndex === 0}
+            disabled={currentStepIndex === 0 || isSubmitting}
             className={cn(
-              'px-6 py-2 rounded-lg font-medium transition-colors',
-              currentStepIndex === 0
-                ? 'text-slate-300 cursor-not-allowed'
-                : 'text-slate-700 hover:bg-slate-100'
+              'btn-secondary flex items-center gap-1.5',
+              currentStepIndex === 0 ? 'opacity-0 pointer-events-none' : ''
             )}
           >
-            Back
+            <ChevronLeft className="h-4 w-4" /> Back
           </button>
+          
           <button
             onClick={handleNext}
-            className="flex items-center gap-2 px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+            disabled={isSubmitting}
+            className="btn-primary flex items-center gap-1.5"
           >
-            {currentStepIndex === steps.length - 1 ? 'Complete' : 'Continue'}
-            <ChevronRight className="h-4 w-4" />
+            {isSubmitting ? (
+              <span className="flex items-center gap-2">
+                <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                Saving...
+              </span>
+            ) : (
+              <>
+                {currentStepIndex === steps.length - 1 ? 'Complete Setup' : 'Continue'}
+                {currentStepIndex !== steps.length - 1 && <ChevronRight className="h-4 w-4" />}
+              </>
+            )}
           </button>
         </div>
       </div>

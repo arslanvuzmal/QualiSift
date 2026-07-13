@@ -277,7 +277,7 @@ try {
 ### Running the Frontend
 ```bash
 cd apps/web
-npm run dev  # Runs on http://localhost:3000
+npm run dev  # Runs on http://localhost:3001
 ```
 
 ### Environment Variables

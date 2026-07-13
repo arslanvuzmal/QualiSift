@@ -62,8 +62,9 @@ Each lead is scored on **ICP Fit (0.30)**, **Buying Intent (0.25)**, **Authority
 ```mermaid
 flowchart TB
     subgraph Browser
-        W[Next.js 14 dashboard<br/>localhost:3000]
+        W[Next.js 14 dashboard<br/>localhost:3001]
     end
+```
     subgraph Backend
         API[FastAPI + LangGraph<br/>localhost:8000]
     end
@@ -94,7 +95,7 @@ docker compose up --build
 ```
 
 Then open:
-- **Dashboard** → http://localhost:3000
+- **Dashboard** → http://localhost:3001
 - **API docs (Swagger)** → http://localhost:8000/docs
 
 The API container migrates the schema, seeds 5 criteria + 5 sample leads, and serves on `0.0.0.0:8000`.

@@ -9,7 +9,7 @@
 cp .env.example .env
 docker compose up --build
 ```
-- Dashboard: http://localhost:3000
+- Dashboard: http://localhost:3001
 - API + Swagger: http://localhost:8000/docs
 
 The `api` service runs `alembic upgrade head` → `python -m scripts.seed` → `uvicorn` on `0.0.0.0:8000`.
@@ -51,12 +51,12 @@ curl -X POST http://localhost:8000/api/v1/digest/generate  # Hot/Warm/Cold count
 ## Troubleshooting — "the link isn't working"
 - **`localhost:8000` refused:** ensure the API binds to `0.0.0.0` (not `127.0.0.1`) — the compose
   command already does. Check `docker compose logs api`.
-- **`localhost:3000` refused:** check `docker compose logs web` shows Next.js "Ready".
+- **`localhost:3001` refused:** check `docker compose logs web` shows Next.js "Ready".
 - **Frontend loads but no data:** confirm `NEXT_PUBLIC_API_URL=http://localhost:8000` (browser-facing,
-  not the internal `api` service name) and that CORS allows `http://localhost:3000` (it does by default).
+  not the internal `api` service name) and that CORS allows `http://localhost:3001` (it does by default).
 - **DB errors on API start (Docker):** Postgres must be healthy first — `depends_on: condition:
   service_healthy` handles ordering; re-run `docker compose up` if the first boot raced.
-- **Port already in use:** stop whatever holds 8000/3000/5432/6379, or change the host port mappings.
+- **Port already in use:** stop whatever holds 8000/3001/5432/6379, or change the host port mappings.
 
 ## Running tests
 ```bash

@@ -1,28 +1,25 @@
 'use client';
-
+import React from 'react';
+import dynamic from 'next/dynamic';
 import {
   Radar,
   RadarChart,
   PolarGrid,
   PolarAngleAxis,
-  PolarRadiusAxis,
   ResponsiveContainer,
 } from 'recharts';
+
 interface ScoreRadarProps {
-  scores: { criteria_name: string; score: number; confidence?: number }[];
-  height?: number;
+  data: {
+    subject: string;
+    score: number;
+    fullMark: number;
+  }[];
 }
 
-export function ScoreRadar({ scores, height = 300 }: ScoreRadarProps) {
-  const data = scores.map((score) => ({
-    subject: score.criteria_name.replace(/_/g, ' ').toUpperCase(),
-    A: score.score,
-    fullMark: 10,
-    confidence: score.confidence,
-  }));
-
+function ScoreRadarComponent({ data }: ScoreRadarProps) {
   return (
-    <div className="w-full" style={{ height }}>
+    <div className="h-64 w-full">
       <ResponsiveContainer width="100%" height="100%">
         <RadarChart cx="50%" cy="50%" outerRadius="75%" data={data}>
           <PolarGrid stroke="rgba(255,255,255,0.1)" />
@@ -43,9 +40,25 @@ export function ScoreRadar({ scores, height = 300 }: ScoreRadarProps) {
             strokeWidth={2}
             fill="#ffffff"
             fillOpacity={0.15}
+          <PolarGrid stroke="#1e293b" />
+          <PolarAngleAxis 
+            dataKey="subject" 
+            tick={{ fill: '#94a3b8', fontSize: 12, fontWeight: 500 }}
+          />
+          <Radar
+            name="Score"
+            dataKey="score"
+            stroke="#6366f1"
+            strokeWidth={2}
+            fill="rgba(99, 102, 241, 0.2)"
+            fillOpacity={1}
           />
         </RadarChart>
       </ResponsiveContainer>
     </div>
   );
 }
+
+export const ScoreRadar = dynamic(() => Promise.resolve(ScoreRadarComponent), {
+  ssr: false,
+});

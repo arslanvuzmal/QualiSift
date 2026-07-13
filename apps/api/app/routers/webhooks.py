@@ -4,6 +4,8 @@ FastAPI router for Webhook endpoints.
 Handles inbound webhooks from external tools like HubSpot, Marketo, etc.
 """
 
+import hashlib
+import hmac
 import structlog
 from fastapi import APIRouter, Request, HTTPException, Header, Depends, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -38,22 +40,22 @@ async def handle_inbound_webhook(
 
     Returns 202 Accepted immediately. Lead processing happens in background.
     """
+    body = await request.body()
     try:
         payload = await request.json()
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Invalid JSON payload: {str(e)}")
 
-    # Validate signature if secret is configured
-    # TODO: Add WEBHOOK_SECRET to settings and validate
-    # if settings.WEBHOOK_SECRET and x_hubspot_signature:
-    #     body = await request.body()
-    #     expected = hmac.new(
-    #         settings.WEBHOOK_SECRET.encode(),
-    #         body,
-    #         hashlib.sha256
-    #     ).hexdigest()
-    #     if not hmac.compare_digest(x_hubspot_signature, expected):
-    #         raise HTTPException(status_code=401, detail="Invalid signature")
+    # Validate HubSpot signature if secret is configured
+    if settings.WEBHOOK_SECRET and x_hubspot_signature:
+        expected = hmac.new(
+            settings.WEBHOOK_SECRET.encode(),
+            body,
+            hashlib.sha256
+        ).hexdigest()
+        if not hmac.compare_digest(x_hubspot_signature, expected):
+            logger.warning("Invalid HubSpot webhook signature")
+            raise HTTPException(status_code=401, detail="Invalid signature")
 
     # Extract lead data from various formats
     lead_data = _parse_webhook_payload(payload)
@@ -64,22 +66,40 @@ async def handle_inbound_webhook(
             detail="Email address is required in webhook payload",
         )
 
-    # Check if lead already exists
+    # Normalize email for case-insensitive comparison
+    normalized_email = lead_data["email"].strip().lower()
+
+    # Check if lead already exists (case-insensitive email comparison)
     existing = await session.execute(
-        select(Lead).where(Lead.email == lead_data["email"])
+        select(Lead).where(Lead.email.ilike(normalized_email))
     )
     existing_lead = existing.scalars().first()
 
     if existing_lead:
-        logger.info(
-            "Webhook received for existing lead",
-            email=lead_data["email"],
-            source=lead_data.get("source", "unknown"),
-        )
+        # Update existing lead with new data from webhook
+        updated = False
+        for field in ["first_name", "last_name", "company", "company_domain", "job_title"]:
+            if lead_data.get(field) and getattr(existing_lead, field) != lead_data[field]:
+                setattr(existing_lead, field, lead_data[field])
+                updated = True
+        if lead_data.get("source"):
+            existing_lead.source = lead_data["source"]
+            updated = True
+        existing_lead.raw_payload = payload
+
+        if updated:
+            await session.commit()
+            await session.refresh(existing_lead)
+            logger.info(
+                "Webhook updated existing lead",
+                lead_id=str(existing_lead.id),
+                email=normalized_email,
+            )
+
         return StandardResponse(
             success=True,
-            message="Lead already exists, updated with new data",
-            data={"lead_id": str(existing_lead.id), "updated": True},
+            message="Lead already exists, updated with new data" if updated else "Lead already exists, no changes",
+            data={"lead_id": str(existing_lead.id), "updated": updated},
         )
 
     # Create new lead
@@ -150,7 +170,7 @@ def _parse_webhook_payload(payload: dict) -> dict:
         }
 
     # Marketo format
-    if "result" in payload and isinstance(payload["result"], list):
+    if "result" in payload and isinstance(payload["result"], list) and payload["result"]:
         result = payload["result"][0]
         return {
             "email": result.get("Email"),
