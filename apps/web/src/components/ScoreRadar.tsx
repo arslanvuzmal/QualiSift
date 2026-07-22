@@ -22,6 +22,24 @@ function ScoreRadarComponent({ data }: ScoreRadarProps) {
     <div className="h-64 w-full">
       <ResponsiveContainer width="100%" height="100%">
         <RadarChart cx="50%" cy="50%" outerRadius="75%" data={data}>
+          <PolarGrid stroke="rgba(255,255,255,0.1)" />
+          <PolarAngleAxis
+            dataKey="subject"
+            tick={{ fill: '#888', fontSize: 9, fontWeight: 900 }}
+          />
+          <PolarRadiusAxis
+            angle={90}
+            domain={[0, 10]}
+            tick={{ fill: '#555', fontSize: 8 }}
+            axisLine={false}
+          />
+          <Radar
+            name="Score"
+            dataKey="A"
+            stroke="#ffffff"
+            strokeWidth={2}
+            fill="#ffffff"
+            fillOpacity={0.15}
           <PolarGrid stroke="#1e293b" />
           <PolarAngleAxis 
             dataKey="subject" 
