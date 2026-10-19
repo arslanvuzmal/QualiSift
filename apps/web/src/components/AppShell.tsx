@@ -66,7 +66,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <span className="flex h-8 w-8 items-center justify-center rounded bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-sm">
             <Target className="h-5 w-5" />
           </span>
-          <span className="font-bold tracking-tight text-white text-lg">CORTEX</span>
+          <span className="font-bold tracking-tight text-white text-lg">QualiSift</span>
         </div>
 
         <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-2">
@@ -93,11 +93,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <div className="p-4">
           <div className="flex items-center gap-3 rounded-xl bg-slate-800 p-3">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-sm font-bold text-white">
-              JD
+              DU
             </div>
             <div className="flex-1 overflow-hidden">
-              <p className="truncate text-sm font-medium text-white">Jane Doe</p>
-              <p className="truncate text-xs text-slate-400">jane@cortex.ai</p>
+              <p className="truncate text-sm font-medium text-white">Demo user</p>
+              <p className="truncate text-xs text-slate-400">demo mode</p>
             </div>
             <button className="text-slate-400 hover:text-white transition-colors" title="Logout">
               <LogOut className="h-4 w-4" />
@@ -119,7 +119,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </button>
 
           <div className="flex items-center gap-2 text-sm text-slate-400">
-            <span className="font-medium text-slate-100">CORTEX</span>
+            <span className="font-medium text-slate-100">QualiSift</span>
             <ChevronRight className="h-4 w-4 text-slate-600" />
             <span className="text-slate-500">{getBreadcrumb()}</span>
           </div>

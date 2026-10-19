@@ -64,7 +64,7 @@ export default function SetupWizard() {
             You're all set!
           </h1>
           <p className="text-slate-400 mb-8 max-w-sm mx-auto text-lg">
-            CORTEX is fully configured and ready to start qualifying your pipeline.
+            QualiSift is fully configured and ready to start qualifying your pipeline.
           </p>
           <button
             onClick={() => router.push('/')}

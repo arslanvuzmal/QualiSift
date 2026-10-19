@@ -6,6 +6,7 @@ import {
   RadarChart,
   PolarGrid,
   PolarAngleAxis,
+  PolarRadiusAxis,
   ResponsiveContainer,
 } from 'recharts';
 
@@ -23,6 +24,8 @@ function ScoreRadarComponent({ data }: ScoreRadarProps) {
       <ResponsiveContainer width="100%" height="100%">
         <RadarChart cx="50%" cy="50%" outerRadius="75%" data={data}>
           <PolarGrid stroke="#1e293b" />
+          {/* Criterion scores are 0–10; without a fixed domain the chart picks its own scale. */}
+          <PolarRadiusAxis domain={[0, 10]} tick={false} axisLine={false} />
           <PolarAngleAxis 
             dataKey="subject" 
             tick={{ fill: '#94a3b8', fontSize: 12, fontWeight: 500 }}

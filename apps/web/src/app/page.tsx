@@ -11,10 +11,10 @@ import {
   ThermometerSun,
   Snowflake,
   Inbox,
-  ArrowUpRight,
 } from 'lucide-react';
 import { useLeads, useDigestHistory } from '@/lib/hooks';
-import { generateDigest } from '@/lib/api';
+import { createLead, generateDigest } from '@/lib/api';
+import { parseCsv, toLead } from '@/lib/csv';
 import type { Lead } from '@/lib/types';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -34,9 +34,10 @@ import {
 
 export default function Dashboard() {
   const [page, setPage] = useState(1);
-  const { leads, meta, isLoading } = useLeads(page, 20);
+  const { leads, meta, isLoading, mutate } = useLeads(page, 20);
   const { digestRuns } = useDigestHistory();
   const [busy, setBusy] = useState(false);
+  const [importing, setImporting] = useState(false);
 
   const scored = leads.filter((l) => l.composite_score);
   const hot = scored.filter((l) => (l.composite_score?.composite_score ?? 0) >= 75).length;
@@ -45,6 +46,34 @@ export default function Dashboard() {
     return s >= 40 && s < 75;
   }).length;
   const cold = scored.filter((l) => (l.composite_score?.composite_score ?? 0) < 40).length;
+
+  // Each row becomes POST /leads; the API enriches and scores it in the background, and the
+  // table picks it up on its 5-second refresh.
+  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setImporting(true);
+    try {
+      const rows = parseCsv(await file.text()).filter((r) => r.email);
+      let created = 0;
+      for (const row of rows) {
+        try {
+          await createLead(toLead(row));
+          created++;
+        } catch {
+          // A bad row (e.g. invalid email) should not stop the rest.
+        }
+      }
+      await mutate();
+      if (created === rows.length) toast.success(`Imported ${created} lead${created === 1 ? '' : 's'}; scoring has started.`);
+      else toast.warning(`Imported ${created} of ${rows.length} rows; check the others for a valid email.`);
+    } catch {
+      toast.error('Could not read that file as CSV.');
+    } finally {
+      setImporting(false);
+    }
+  };
 
   const handleDigest = async () => {
     setBusy(true);
@@ -150,10 +179,11 @@ export default function Dashboard() {
           <p className="text-sm text-slate-500 mt-1">Your AI-qualified leads for today.</p>
         </div>
         <div className="flex items-center gap-3">
-          <button className="btn-secondary">
+          <label className={`btn-secondary cursor-pointer ${importing ? 'opacity-60' : ''}`}>
             <Upload className="h-4 w-4 mr-2" />
-            Import CSV
-          </button>
+            {importing ? 'Importing…' : 'Import CSV'}
+            <input type="file" accept=".csv,text/csv" className="sr-only" disabled={importing} onChange={handleImport} />
+          </label>
           <button
             onClick={handleDigest}
             disabled={busy}
@@ -168,10 +198,10 @@ export default function Dashboard() {
       {/* Stats Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {[
-          { label: 'Total Leads', value: meta.total || leads.length, icon: Users, color: 'text-indigo-400', bg: 'bg-indigo-500/10', trend: '+12%', trendColor: 'text-emerald-400' },
-          { label: 'Hot Leads', value: hot, icon: Flame, color: 'text-rose-400', bg: 'bg-rose-500/10', trend: '+5%', trendColor: 'text-emerald-400' },
-          { label: 'Warm Leads', value: warm, icon: ThermometerSun, color: 'text-amber-400', bg: 'bg-amber-500/10', trend: '-2%', trendColor: 'text-rose-400' },
-          { label: 'Cold Leads', value: cold, icon: Snowflake, color: 'text-slate-400', bg: 'bg-slate-800', trend: '+1%', trendColor: 'text-emerald-400' },
+          { label: 'Total Leads', value: meta.total || leads.length, icon: Users, color: 'text-indigo-400', bg: 'bg-indigo-500/10' },
+          { label: 'Hot Leads', value: hot, icon: Flame, color: 'text-rose-400', bg: 'bg-rose-500/10' },
+          { label: 'Warm Leads', value: warm, icon: ThermometerSun, color: 'text-amber-400', bg: 'bg-amber-500/10' },
+          { label: 'Cold Leads', value: cold, icon: Snowflake, color: 'text-slate-400', bg: 'bg-slate-800' },
         ].map((stat, i) => (
           <div key={i} className="enterprise-card bg-slate-900/50 backdrop-blur p-6 border-slate-800">
             <div className="flex items-center justify-between">
@@ -183,10 +213,6 @@ export default function Dashboard() {
             <div className="mt-4 flex items-baseline gap-2">
               <span className="text-3xl font-bold tracking-tight text-slate-100">
                 {isLoading ? '—' : stat.value}
-              </span>
-              <span className={`flex items-center text-xs font-medium ${stat.trendColor}`}>
-                {stat.trend.startsWith('+') ? <ArrowUpRight className="h-3 w-3 mr-0.5" /> : null}
-                {stat.trend}
               </span>
             </div>
           </div>

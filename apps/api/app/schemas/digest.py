@@ -1,6 +1,6 @@
 """Pydantic schemas for the daily digest system."""
 
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, field_validator
 from datetime import datetime
 
 
@@ -14,6 +14,12 @@ class LeadDigestItem(BaseModel):
     job_title: str
     composite_score: float = Field(ge=0, le=100)
     status: str
+
+    # These are optional on a lead (LeadCreate); a missing one used to make the whole digest fail.
+    @field_validator("first_name", "last_name", "company", "job_title", mode="before")
+    @classmethod
+    def _missing_as_empty(cls, v: object) -> object:
+        return "" if v is None else v
 
 
 class HotLeadDigestItem(LeadDigestItem):

@@ -3,7 +3,7 @@ import './globals.css';
 import { AppShell } from '@/components/AppShell';
 
 export const metadata: Metadata = {
-  title: 'Cortex — AI Sales Lead Qualifier',
+  title: 'QualiSift — AI Sales Lead Qualifier',
   description: 'AI-powered sales lead scoring and qualification platform',
 };
 

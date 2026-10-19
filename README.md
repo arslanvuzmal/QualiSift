@@ -1,215 +1,153 @@
 <div align="center">
 
-# 🎯 Cortex — AI Sales Lead Qualifier
+# QualiSift: AI sales lead qualifier
 
-**Turn a firehose of raw leads into a ranked, evidence-backed call list — automatically.**
+**Scores incoming leads against five weighted criteria, checks every cited fact against the lead's
+own data, and sorts them into Hot, Warm and Cold.**
 
-Cortex ingests leads, enriches them, scores them against five weighted criteria with an
-LLM-driven agent, guards every score against hallucination, and delivers a daily Hot / Warm / Cold
-digest — so reps spend their day on the 20% of leads that close.
-
-![Python](https://img.shields.io/badge/python-3.12-blue)
-![FastAPI](https://img.shields.io/badge/FastAPI-async-009688)
+[![CI](https://github.com/arslanvuzmal/QualiSift/actions/workflows/ci.yml/badge.svg)](https://github.com/arslanvuzmal/QualiSift/actions/workflows/ci.yml)
+![Python](https://img.shields.io/badge/python-3.11%2B-blue)
 ![Next.js](https://img.shields.io/badge/Next.js-14-black)
-![LangGraph](https://img.shields.io/badge/LangGraph-agent-purple)
-![Tests](https://img.shields.io/badge/tests-86%20passing-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 </div>
 
----
-
-## Why Cortex
-
-Sales teams drown in leads and starve for **prioritization**. Reps burn hours on leads that were
-never going to close, while genuinely hot prospects go cold waiting in a queue. Cortex fixes the
-prioritization problem with an **agentic scoring pipeline** that is:
-
-- **Explainable** — every score cites the exact data it used. No black box.
-- **Grounded** — an anti-hallucination validator rejects any "evidence" not present in the lead record.
-- **Tunable** — sales ops adjust the five criteria weights live; re-scoring is one click.
-- **Provider-agnostic** — LLM, enrichment, CRM, and email are swappable adapters (config, not code).
-- **Runs with zero API keys** — a deterministic mock LLM + mock enrichment let you demo the whole
-  flow offline; flip a config value to use OpenAI + Clearbit in production.
-
-📈 **See [BUSINESS_IMPACT.md](BUSINESS_IMPACT.md) for the ROI case, use-cases, and metrics.**
+QualiSift was previously called Cortex; some code and docs still use that name.
 
 ---
 
-## What it does (the pipeline)
+## What it does
+
+1. **A lead comes in**: from the API (`POST /leads`), a CRM webhook (`POST /webhooks/inbound`) or a
+   CSV file imported on the dashboard.
+2. **Enrichment** adds company data (industry, size, location, tech stack, funding).
+3. **A LangGraph agent scores it** on five criteria, each 0–10, with reasoning and the evidence it used.
+   Emails are hashed and phone numbers masked before anything reaches the model.
+4. **The validator checks the answer**: every piece of cited evidence must appear in the lead record
+   (fuzzy match, threshold 0.85), criterion names must be valid and scores in range.
+5. **A weighted composite (0–100)** puts the lead in a segment: **Hot ≥ 75**, **Warm 40–74**, **Cold < 40**.
+6. **A digest** groups scored leads by segment and sends it (console, SMTP or SendGrid; Slack optional).
+   It is generated on request; there is no scheduler.
+
+Default weights: ICP fit 0.30, buying intent 0.25, authority 0.20, pain/need 0.15, timing 0.10.
+They can be changed on the Criteria page and must add up to 1.
 
 ```mermaid
 flowchart LR
-    A[Lead in<br/>API / webhook / CSV] --> B[Enrich<br/>firmographics]
-    B --> C{{LangGraph scoring agent}}
+    A[Lead in<br/>API · webhook · CSV] --> B[Enrich]
+    B --> C[Prepare context]
     C --> D[Redact PII]
-    D --> E[Score 5 criteria<br/>LLM structured output]
-    E --> F[Anti-hallucination<br/>validation]
+    D --> E[Score 5 criteria<br/>LLM, structured output]
+    E --> F[Validate evidence<br/>against the lead]
     F --> G[Weighted composite<br/>0–100]
-    G --> H[(Persist scores)]
-    H --> I[Daily digest<br/>Hot / Warm / Cold]
-    I --> J[Email + Slack]
+    G --> H[(Save scores)]
+    H --> I[Digest on request<br/>Hot / Warm / Cold]
 ```
-
-Each lead is scored on **ICP Fit (0.30)**, **Buying Intent (0.25)**, **Authority (0.20)**,
-**Pain / Need (0.15)** and **Timing (0.10)**. The weighted composite (0–100) segments the lead:
-**Hot ≥ 75**, **Warm 40–74**, **Cold < 40**.
-
----
-
-## System architecture
 
 ```mermaid
 flowchart TB
-    subgraph Browser
-        W[Next.js 14 dashboard<br/>localhost:3001]
-    end
-```
-    subgraph Backend
-        API[FastAPI + LangGraph<br/>localhost:8000]
-    end
-    subgraph Data
-        PG[(PostgreSQL + pgvector)]
-        RD[(Redis)]
-    end
-    subgraph Providers
-        LLM[OpenAI / mock]
-        ENR[Clearbit / mock]
-    end
-    W -->|REST /api/v1| API
-    API --> PG
-    API --> RD
-    API --> LLM
-    API --> ENR
+    W[Next.js 14 dashboard :3001] -->|REST /api/v1| API[FastAPI + LangGraph :8000]
+    API --> DB[(PostgreSQL, or SQLite locally)]
+    API --> LLM[OpenAI, or the offline mock]
+    API --> ENR[Clearbit, or the offline mock]
 ```
 
 ---
 
-## Quick start
+## Run the demo (no API keys, no Docker)
 
-### Option A — Docker (full stack, one command)
+Demo mode uses a deterministic mock model and mock enrichment, and SQLite. Nothing leaves your machine.
+
+```bash
+# API
+cd apps/api
+python -m venv .venv
+. .venv/Scripts/activate          # macOS/Linux: . .venv/bin/activate
+pip install -e ".[dev]"
+printf "DATABASE_URL=sqlite+aiosqlite:///./dev.db\nLLM_PROVIDER=mock\nENRICHMENT_PROVIDER=mock\n" > .env
+python -m scripts.seed            # 5 criteria + 5 sample leads (unscored)
+uvicorn app.main:app --port 8000
+
+# Dashboard (second terminal)
+cd apps/web
+npm install
+echo "NEXT_PUBLIC_API_URL=http://localhost:8000" > .env.local
+npm run dev                       # http://localhost:3001
+```
+
+Then:
+
+- Score the seeded leads: open a lead and press **Re-score**, or `POST /api/v1/leads/{id}/score`.
+- Add new ones: **Import CSV** on the dashboard with [`samples/leads.csv`](samples/leads.csv). Each row is
+  created through `POST /leads` and scored in the background; the table refreshes every 5 seconds.
+- **Generate Digest** on the dashboard; the console email provider prints it in the API log.
+- API docs: http://localhost:8000/docs
+
+All names and companies in the sample data are made up. `scripts/seed_showcase.py` inserts 100+ leads
+with **random** scores for UI work; those scores do not come from the pipeline.
+
+### Docker
 
 ```bash
 cp .env.example .env
 docker compose up --build
 ```
 
-Then open:
-- **Dashboard** → http://localhost:3001
-- **API docs (Swagger)** → http://localhost:8000/docs
-
-The API container migrates the schema, seeds 5 criteria + 5 sample leads, and serves on `0.0.0.0:8000`.
-
-### Option B — Native, no Docker (SQLite, zero external services)
-
-```bash
-# API
-cd apps/api
-python -m venv .venv && . .venv/Scripts/activate     # (or .venv/bin/activate on macOS/Linux)
-pip install -e ".[dev]"
-echo "DATABASE_URL=sqlite+aiosqlite:///./dev.db
-LLM_PROVIDER=mock
-ENRICHMENT_PROVIDER=mock" > .env
-python -m scripts.seed
-uvicorn app.main:app --host 0.0.0.0 --port 8000
-
-# Web (second terminal)
-cd apps/web
-npm install
-npm run dev
-```
-
-Same URLs as above. This path needs **no Postgres, Redis, or API keys** — the models are
-dialect-portable and the mock providers run fully offline.
-
----
-
-## The dashboard
-
-| Page | What it does |
-|------|--------------|
-| `/` | Sortable lead table with score badges + Hot/Warm/Cold tiles; one-click **Generate Digest** |
-| `/leads/[id]` | Lead detail: **score radar**, per-criterion reasoning + **cited evidence**, enrichment, **re-score** |
-| `/criteria` | Live weight sliders (must sum to 1.0) that change how new leads are scored |
-| `/digest` | Digest run history + on-demand generation |
-| `/setup` | Guided configuration wizard |
-
----
-
-## API surface (`/api/v1`)
-
-| Method | Endpoint | Purpose |
-|--------|----------|---------|
-| `POST` | `/leads` | Create a lead → auto enrich + score in the background |
-| `GET` | `/leads` | Paginated list with composite scores |
-| `GET` | `/leads/{id}` | Lead detail incl. per-criterion scores + evidence |
-| `POST` | `/leads/{id}/score` | Re-run scoring for a lead |
-| `GET` / `PUT` | `/criteria` | Read / update criteria weights |
-| `POST` | `/digest/generate` | Compile + record a digest run |
-| `GET` | `/digest/history` | Past digest runs |
-| `POST` | `/webhooks/inbound` | Ingest leads from HubSpot / Marketo / generic JSON |
-| `GET` | `/health` | DB + Redis health |
-
-Full interactive docs live at `/docs` (Swagger) and `/redoc`.
-
----
-
-## Project structure
-
-```
-├── apps/
-│   ├── api/                     # FastAPI + LangGraph backend
-│   │   ├── app/
-│   │   │   ├── agents/          # LangGraph graph, prompts, schemas, anti-hallucination validator
-│   │   │   ├── adapters/        # enrichment (mock/clearbit), email, notifications
-│   │   │   ├── services/        # scoring, enrichment, digest, notifications
-│   │   │   ├── routers/         # leads, scoring, criteria, digest, webhooks, health
-│   │   │   ├── models/          # SQLAlchemy ORM (portable Postgres/SQLite types)
-│   │   │   ├── schemas/         # Pydantic request/response models
-│   │   │   ├── db/              # session, base types, seed
-│   │   │   └── utils/           # PII redaction, crypto
-│   │   ├── alembic/             # migrations
-│   │   └── tests/               # 86 pytest tests
-│   └── web/                     # Next.js 14 dashboard (App Router, TS, Tailwind)
-├── scripts/                     # init.sql, seed launcher
-├── docs/                        # architecture + setup guides
-├── docker-compose.yml
-└── .env.example
-```
+Postgres, Redis, the API (migrates and seeds on start) and the dashboard, on the same ports.
 
 ---
 
 ## Configuration
 
-Everything is env-driven (see [`.env.example`](.env.example)). Highlights:
-
 | Variable | Default | Notes |
-|----------|---------|-------|
-| `LLM_PROVIDER` | `mock` | `mock` (offline) or `openai` (needs `OPENAI_API_KEY`) |
+|---|---|---|
+| `DATABASE_URL` | Postgres | `sqlite+aiosqlite:///./dev.db` for local demo mode |
+| `LLM_PROVIDER` | `mock` | `mock` (offline, deterministic) or `openai` (needs `OPENAI_API_KEY`) |
 | `ENRICHMENT_PROVIDER` | `mock` | `mock` or `clearbit` (needs `CLEARBIT_API_KEY`) |
-| `DATABASE_URL` | Postgres | Use `sqlite+aiosqlite:///./dev.db` for keyless local dev |
-| `PII_SALT` | — | Salt for SHA-256 email hashing before LLM calls |
+| `EMAIL_PROVIDER` | `console` | `console`, `smtp` or `sendgrid` |
+| `SLACK_WEBHOOK_URL` | unset | Post digests to Slack when set |
+| `PII_SALT` | unset | Salt for hashing emails before they reach the model |
+
+See [`.env.example`](.env.example) for the full list.
 
 ---
 
-## Testing
+## Tests
 
 ```bash
-cd apps/api && pytest        # 86 tests: agent, validator, digest, PII, crypto
+cd apps/api && pytest            # unit tests + an end-to-end smoke test (app, SQLite, mock providers)
 cd apps/web && npm run type-check
 ```
 
----
-
-## Tech stack
-
-**Backend:** Python 3.12 · FastAPI · LangGraph · SQLAlchemy 2 (async) · Pydantic v2 · Alembic ·
-structlog · slowapi
-**Frontend:** Next.js 14 (App Router) · TypeScript (strict) · Tailwind CSS · SWR · Recharts
-**Data / infra:** PostgreSQL 16 + pgvector · Redis 7 · Docker Compose
+CI runs both on every push and pull request, plus ruff and a `docker compose config` check.
 
 ---
 
-## License
+## API (`/api/v1`)
+
+| Method | Endpoint | Purpose |
+|---|---|---|
+| `POST` | `/leads` | Create a lead; enrichment and scoring run in the background (202) |
+| `GET` | `/leads`, `/leads/{id}` | List, or one lead with scores and evidence |
+| `POST` | `/leads/{id}/score` | Score again |
+| `GET` / `PUT` | `/criteria` | Read or change weights |
+| `POST` | `/digest/generate` | Build and send a digest |
+| `GET` | `/digest/history` | Past digests |
+| `POST` | `/webhooks/inbound` | HubSpot, Marketo or generic JSON |
+| `GET` | `/health` | Database and Redis health |
+
+---
+
+## Project layout
+
+```
+apps/api/    FastAPI app: agents/ (graph, prompts, validator), adapters/ (email, enrichment,
+             notifications), services/, routers/, models/, utils/ (PII, crypto), tests/
+apps/web/    Next.js 14 dashboard
+samples/     Sample CSV for the import
+docs/        Architecture and setup notes
+```
+
+## Licence
 
 [MIT](LICENSE)
