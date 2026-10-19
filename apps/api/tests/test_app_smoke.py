@@ -59,3 +59,14 @@ def test_lead_is_enriched_and_scored(client: TestClient) -> None:
     composite = lead["composite_score"]["composite_score"]
     assert 0 <= composite <= 100
     assert len(lead["scores"]) == 5
+
+
+def test_digest_is_sent_and_recorded(client: TestClient) -> None:
+    generated = client.post("/api/v1/digest/generate")
+    assert generated.status_code == 200, generated.text
+    run_id = generated.json()["data"]["run_id"]
+    # The console email provider sends in a background task, which TestClient runs before returning.
+    runs = client.get("/api/v1/digest/history").json()["data"]
+    items = runs["items"] if isinstance(runs, dict) else runs
+    run = next(r for r in items if str(r["id"]) == run_id)
+    assert run["status"] == "sent", run

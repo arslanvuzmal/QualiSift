@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Mail, RefreshCw, Send, CheckCircle2 } from 'lucide-react';
+import { Mail, RefreshCw, Send, CheckCircle2, XCircle, Clock } from 'lucide-react';
 import { useDigestHistory } from '@/lib/hooks';
 import { generateDigest } from '@/lib/api';
 import { toast } from 'sonner';
@@ -61,12 +61,22 @@ export default function DigestPage() {
     {
       header: 'Status',
       accessorKey: 'status',
-      cell: (run) => (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 capitalize">
-          <CheckCircle2 className="h-3 w-3" />
-          {run.status}
-        </span>
-      )
+      // Only a sent digest gets the green tick; pending and failed runs used to show it too.
+      cell: (run) => {
+        const style =
+          run.status === 'sent'
+            ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+            : run.status === 'failed'
+            ? 'bg-rose-500/10 border-rose-500/20 text-rose-400'
+            : 'bg-slate-500/10 border-slate-500/20 text-slate-400';
+        const Icon = run.status === 'sent' ? CheckCircle2 : run.status === 'failed' ? XCircle : Clock;
+        return (
+          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium border capitalize ${style}`}>
+            <Icon className="h-3 w-3" />
+            {run.status}
+          </span>
+        );
+      }
     }
   ];
 

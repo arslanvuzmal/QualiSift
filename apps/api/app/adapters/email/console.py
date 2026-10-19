@@ -1,5 +1,7 @@
 """Console email adapter for local development/testing."""
 
+import sys
+
 import structlog
 from jinja2 import Environment, FileSystemLoader
 from pathlib import Path
@@ -8,6 +10,13 @@ from app.adapters.email.base import EmailAdapter
 from app.schemas.digest import DigestPayload
 
 logger = structlog.get_logger()
+
+
+def _print(text: str) -> None:
+    """Print in whatever encoding the console has. The email contains emoji, which a Windows
+    console (cp1252) cannot encode; the error used to mark the whole digest as failed."""
+    encoding = sys.stdout.encoding or "utf-8"
+    print(text.encode(encoding, errors="replace").decode(encoding))
 
 
 class ConsoleEmailAdapter(EmailAdapter):
@@ -54,15 +63,15 @@ class ConsoleEmailAdapter(EmailAdapter):
             )
             
             # Print to console for verification
-            print("\n" + "="*80)
-            print("📧 DIGEST EMAIL PREVIEW (Console Mode)")
-            print("="*80)
-            print(f"To: {', '.join(recipients)}")
-            print(f"Date: {payload.run_date.strftime('%Y-%m-%d')}")
-            print(f"Stats: {payload.hot_count} Hot, {payload.warm_count} Warm, {payload.cold_count} Cold")
-            print("="*80)
-            print(html_content[:2000] + "..." if len(html_content) > 2000 else html_content)
-            print("="*80 + "\n")
+            _print("\n" + "="*80)
+            _print("📧 DIGEST EMAIL PREVIEW (Console Mode)")
+            _print("="*80)
+            _print(f"To: {', '.join(recipients)}")
+            _print(f"Date: {payload.run_date.strftime('%Y-%m-%d')}")
+            _print(f"Stats: {payload.hot_count} Hot, {payload.warm_count} Warm, {payload.cold_count} Cold")
+            _print("="*80)
+            _print(html_content[:2000] + "..." if len(html_content) > 2000 else html_content)
+            _print("="*80 + "\n")
             
             return True
             

@@ -5,6 +5,7 @@ Handles manual triggering of daily digest and viewing digest history.
 """
 
 import structlog
+import uuid
 from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -25,6 +26,8 @@ async def _send_digest_background(digest_run_id: str, payload) -> None:
     """Background task to send digest notifications."""
     from app.db.session import async_session_factory
 
+    # The column is a UUID type; comparing it with the string id raised, so runs stayed "pending".
+    run_id = uuid.UUID(digest_run_id)
     async with async_session_factory() as session:
         try:
             notifier = NotificationService(DigestService(session))
@@ -32,7 +35,7 @@ async def _send_digest_background(digest_run_id: str, payload) -> None:
             success = await notifier.send_daily_digest(recipients)
 
             result = await session.execute(
-                select(DigestRun).where(DigestRun.id == digest_run_id)
+                select(DigestRun).where(DigestRun.id == run_id)
             )
             digest_run = result.scalars().first()
             if digest_run:
@@ -47,7 +50,7 @@ async def _send_digest_background(digest_run_id: str, payload) -> None:
             logger.exception("Background digest sending failed", run_id=digest_run_id, error=str(e))
             # Mark as failed
             result = await session.execute(
-                select(DigestRun).where(DigestRun.id == digest_run_id)
+                select(DigestRun).where(DigestRun.id == run_id)
             )
             digest_run = result.scalars().first()
             if digest_run:
