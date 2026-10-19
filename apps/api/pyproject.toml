@@ -29,6 +29,7 @@ dependencies = [
     "aiosqlite>=0.19.0",
     "redis>=5.0.0",
     "python-multipart>=0.0.9",
+    "aiosmtplib>=3.0.0",
 ]
 
 [project.optional-dependencies]
@@ -52,6 +53,11 @@ testpaths = ["tests"]
 [tool.ruff]
 line-length = 100
 target-version = "py312"
+
+[tool.ruff.lint]
+# The rules CI has always enforced (ruff's defaults when it was set up). Newer ruff releases
+# select more by default, which would fail CI without any change to the code.
+select = ["E4", "E7", "E9", "F"]
 
 [tool.mypy]
 python_version = "3.12"

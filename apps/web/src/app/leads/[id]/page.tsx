@@ -160,7 +160,7 @@ export default function LeadDetailPage() {
                     />
                   </svg>
                   <div className="absolute flex flex-col items-center justify-center">
-                    <span className="text-2xl font-bold text-slate-100">{Math.round(compositeVal)}</span>
+                    <span className="text-2xl font-bold text-slate-100">{compositeVal.toFixed(1)}</span>
                   </div>
                 </div>
                 <div>
